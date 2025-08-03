@@ -9,11 +9,15 @@ commands:
   livechat:
     description: Connects to a YouTube live stream.
     usage: /<command> <start|stop> <youtube|tiktok|twitch>
+    permission: namlivechat.use
   namlivechat:
     description: Admin commands for NamLivechat.
     usage: /<command> [reload]
     permission: namlivechat.admin
 permissions:
+  namlivechat.use:
+    description: Allows using the /livechat command. Recommended for Streamer rank.
+    default: op
   namlivechat.admin:
     description: Allows access to admin commands for NamLivechat.
     default: op

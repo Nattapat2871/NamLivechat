@@ -49,3 +49,18 @@ sounds:
     name: "ENTITY_PLAYER_LEVELUP"
     volume: 1.0
     pitch: 1.5
+
+# ========================================= #
+#          Boss Bar Alert Settings          #
+# ========================================= #
+# BarColor options: BLUE, GREEN, PINK, PURPLE, RED, WHITE, YELLOW
+# BarStyle options: SOLID, SEGMENTED_6, SEGMENTED_10, SEGMENTED_12, SEGMENTED_20
+bossbar-alerts:
+  enabled: true
+  duration-seconds: 10
+  super-chat:
+    color: "YELLOW"
+    style: "SOLID"
+  new-member:
+    color: "PINK"
+    style: "SOLID"

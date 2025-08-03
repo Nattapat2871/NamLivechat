@@ -36,7 +36,8 @@ public final class NamLivechat extends JavaPlugin implements Listener {
     @EventHandler
     public void onPlayerQuit(PlayerQuitEvent event) {
         if (liveChatCommand != null) {
-            liveChatCommand.stopTaskForPlayer(event.getPlayer());
+            // Stop all tasks for the quitting player across all platforms
+            liveChatCommand.stopAllTasksForPlayer(event.getPlayer());
         }
     }
 

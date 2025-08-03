@@ -16,7 +16,7 @@ commands:
     permission: namlivechat.admin
 permissions:
   namlivechat.use:
-    description: Allows using the /livechat command.
+    description: Allows using the /livechat command. Recommended for Streamer rank.
     default: op
   namlivechat.admin:
     description: Allows access to admin commands for NamLivechat.
