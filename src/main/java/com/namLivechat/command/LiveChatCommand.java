@@ -1,6 +1,7 @@
 package com.namLivechat.command;
 
 import com.namLivechat.NamLivechat;
+import com.namLivechat.platform.Twitch.TwitchService;
 import com.namLivechat.platform.Youtube.YouTubeService;
 import com.google.api.services.youtube.model.LiveChatMessage;
 import com.google.api.services.youtube.model.LiveChatMessageAuthorDetails;
@@ -17,46 +18,50 @@ import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.PluginDescriptionFile;
 import org.bukkit.scheduler.BukkitTask;
+
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public class LiveChatCommand implements CommandExecutor, TabCompleter {
 
     private final NamLivechat plugin;
     private YouTubeService youtubeService;
+    private final TwitchService twitchService;
     private String messageFormat;
     private final Map<UUID, Map<String, Object>> playerTasks = new ConcurrentHashMap<>();
     private final Map<UUID, Map<String, String>> nextPageTokens = new ConcurrentHashMap<>();
     private final Map<UUID, Map<String, Long>> startTimeStamps = new ConcurrentHashMap<>();
 
-    // Boss Bar variables
     private record BossBarInfo(String title, BarColor color, BarStyle style) {}
     private final Map<UUID, Queue<BossBarInfo>> bossBarQueue = new ConcurrentHashMap<>();
     private final Map<UUID, Object> bossBarTasks = new ConcurrentHashMap<>();
 
-
     private boolean isFolia = false;
     private static final Object TASK_IN_PROGRESS = new Object();
+    private static final Pattern TWITCH_URL_PATTERN = Pattern.compile("^(?:https?:\\/\\/)?(?:www\\.)?twitch\\.tv\\/([a-zA-Z0-9_]+)");
 
     public LiveChatCommand(NamLivechat plugin) {
         this.plugin = plugin;
         this.isFolia = isFoliaServer();
+        this.twitchService = new TwitchService(plugin);
     }
 
     public void initializeServices(String apiKey) {
         this.messageFormat = ChatColor.translateAlternateColorCodes('&', plugin.getConfig().getString("message-format", "&c[YouTube] &f%player%: &e%message%"));
-        if (apiKey == null) {
+        if (apiKey == null || apiKey.isEmpty() || apiKey.equals("YOUR_API_KEY_HERE")) {
             this.youtubeService = null;
-            return;
-        }
-        try {
-            this.youtubeService = new YouTubeService(apiKey);
-            plugin.getLogger().info("YouTube Service has been successfully initialized.");
-        } catch (Exception e) {
-            plugin.getLogger().severe("Failed to initialize YouTube service! Check your API Key or internet connection.");
-            this.youtubeService = null;
+        } else {
+            try {
+                this.youtubeService = new YouTubeService(apiKey);
+                plugin.getLogger().info("YouTube Service has been successfully initialized.");
+            } catch (Exception e) {
+                plugin.getLogger().severe("Failed to initialize YouTube service! Check your API Key or internet connection.");
+                this.youtubeService = null;
+            }
         }
     }
 
@@ -80,9 +85,9 @@ public class LiveChatCommand implements CommandExecutor, TabCompleter {
         if (args.length == 0) {
             PluginDescriptionFile desc = plugin.getDescription();
             sender.sendMessage(ChatColor.AQUA + "--- " + desc.getName() + " v" + desc.getVersion() + " ---");
-            sender.sendMessage(ChatColor.WHITE + "Feature: " + ChatColor.YELLOW + "Display YouTube Live Chat in-game.");
+            sender.sendMessage(ChatColor.WHITE + "Feature: " + ChatColor.YELLOW + "Display YouTube & Twitch Live Chat in-game.");
             sender.sendMessage(ChatColor.WHITE + "Author: " + ChatColor.YELLOW + desc.getAuthors().get(0));
-            sender.sendMessage(ChatColor.GREEN + "Usage: /" + label + " <start|stop> <platform> [id/url]");
+            sender.sendMessage(ChatColor.GREEN + "Usage: /" + label + " <start|stop> <platform> [id/url/channel]");
             return true;
         }
 
@@ -111,33 +116,26 @@ public class LiveChatCommand implements CommandExecutor, TabCompleter {
 
     private void handleStartCommand(Player player, String[] args) {
         if (args.length < 2) {
-            player.sendMessage(ChatColor.RED + "Usage: /livechat start <platform> <id/url>");
+            player.sendMessage(ChatColor.RED + "Usage: /livechat start <platform> [id/url/channel]");
             player.playSound(player.getLocation(), "entity.villager.no", 1.0f, 1.0f);
             return;
         }
 
         String platform = args[1].toLowerCase();
-
-        if (platform.equals("tiktok") || platform.equals("twitch")) {
-            player.sendMessage(ChatColor.GOLD + "This platform is not yet available. Please follow development at: https://github.com/Nattapat2871");
-            return;
-        }
-
-        if (args.length < 3) {
-            player.sendMessage(ChatColor.RED + "Usage: /livechat start <platform> <id/url>");
-            player.playSound(player.getLocation(), "entity.villager.no", 1.0f, 1.0f);
-            return;
-        }
-
         UUID playerUUID = player.getUniqueId();
-        if (playerTasks.get(playerUUID).containsKey(platform)) {
-            player.sendMessage(ChatColor.RED + "You are already connected to a " + platform + " live chat.");
-            player.playSound(player.getLocation(), "entity.villager.no", 1.0f, 1.0f);
-            return;
-        }
 
         switch (platform) {
             case "youtube":
+                if (args.length < 3) {
+                    player.sendMessage(ChatColor.RED + "Usage: /livechat start youtube <id/url>");
+                    player.playSound(player.getLocation(), "entity.villager.no", 1.0f, 1.0f);
+                    return;
+                }
+                if (playerTasks.get(playerUUID).containsKey(platform)) {
+                    player.sendMessage(ChatColor.RED + "You are already connected to a " + platform + " live chat.");
+                    player.playSound(player.getLocation(), "entity.villager.no", 1.0f, 1.0f);
+                    return;
+                }
                 if (youtubeService == null) {
                     player.sendMessage(ChatColor.RED + "YouTube feature is currently disabled. Please contact an admin.");
                     player.playSound(player.getLocation(), "entity.villager.no", 1.0f, 1.0f);
@@ -145,40 +143,69 @@ public class LiveChatCommand implements CommandExecutor, TabCompleter {
                 }
                 startLiveChat(player, args[2], platform);
                 break;
+
+            case "twitch":
+                if (args.length < 3) {
+                    player.sendMessage(ChatColor.RED + "Usage: /livechat start twitch <channel/url>");
+                    player.playSound(player.getLocation(), "entity.villager.no", 1.0f, 1.0f);
+                    return;
+                }
+                if (twitchService.isRunning(player)) {
+                    player.sendMessage(ChatColor.RED + "You are already connected to a Twitch live chat.");
+                    player.playSound(player.getLocation(), "entity.villager.no", 1.0f, 1.0f);
+                    return;
+                }
+                String twitchInput = args[2];
+                Matcher matcher = TWITCH_URL_PATTERN.matcher(twitchInput);
+                String channelName;
+                if (matcher.find()) {
+                    channelName = matcher.group(1);
+                } else {
+                    channelName = twitchInput;
+                }
+                twitchService.start(player, channelName);
+                break;
+
+            case "tiktok":
+                player.sendMessage(ChatColor.GOLD + "This platform is not yet available.");
+                break;
+
             default:
-                player.sendMessage(ChatColor.RED + "Unknown platform. Available platforms: youtube, tiktok, twitch");
+                player.sendMessage(ChatColor.RED + "Unknown platform. Available platforms: youtube, twitch");
                 player.playSound(player.getLocation(), "entity.villager.no", 1.0f, 1.0f);
                 break;
         }
     }
 
     private void handleStopCommand(Player player, String[] args) {
-        UUID playerUUID = player.getUniqueId();
-        Map<String, Object> currentTasks = playerTasks.get(playerUUID);
-
-        if (currentTasks == null || currentTasks.isEmpty()) {
-            player.sendMessage(ChatColor.RED + "You are not connected to any live chat.");
-            player.playSound(player.getLocation(), "entity.villager.no", 1.0f, 1.0f);
-            return;
-        }
-
         if (args.length < 2) {
-            stopAllTasksForPlayer(player);
-            player.sendMessage(ChatColor.GREEN + "Disconnected from all live chats.");
-            player.playSound(player.getLocation(), "block.note_block.bass", 1.0f, 1.0f);
+            stopAllTasksForPlayer(player, false);
             return;
         }
 
         String platform = args[1].toLowerCase();
-        if (!currentTasks.containsKey(platform)) {
-            player.sendMessage(ChatColor.RED + "You are not connected to a " + platform + " live chat.");
-            player.playSound(player.getLocation(), "entity.villager.no", 1.0f, 1.0f);
-            return;
-        }
+        switch (platform) {
+            case "youtube":
+                Map<String, Object> currentTasks = playerTasks.get(player.getUniqueId());
+                if (currentTasks == null || !currentTasks.containsKey(platform)) {
+                    player.sendMessage(ChatColor.RED + "You are not connected to a " + platform + " live chat.");
+                    player.playSound(player.getLocation(), "entity.villager.no", 1.0f, 1.0f);
+                    return;
+                }
+                stopTaskForPlayerPlatform(player, platform);
+                player.sendMessage(ChatColor.GREEN + "Disconnected from " + platform + " live chat.");
+                player.playSound(player.getLocation(), "block.note_block.bass", 1.0f, 1.0f);
+                break;
 
-        stopTaskForPlayerPlatform(player, platform);
-        player.sendMessage(ChatColor.GREEN + "Disconnected from " + platform + " live chat.");
-        player.playSound(player.getLocation(), "block.note_block.bass", 1.0f, 1.0f);
+            case "twitch":
+                twitchService.stop(player, false);
+                break;
+
+            default:
+                player.sendMessage(ChatColor.RED + "Unknown platform: " + platform);
+                player.playSound(player.getLocation(), "entity.villager.no", 1.0f, 1.0f);
+                break;
+        }
     }
 
     private void startLiveChat(Player player, String input, String platform) {
@@ -216,23 +243,26 @@ public class LiveChatCommand implements CommandExecutor, TabCompleter {
                 });
                 fetchAndDisplayMessages(playerUUID, liveChatId, platform);
             } catch (Exception e) {
-                // **NEW:** Enhanced error handling for connection phase
+                // --- ส่วนที่แก้ไข: จัดการ Error ของ YouTube ---
                 String errorMessage = e.getMessage();
                 if (errorMessage != null && errorMessage.contains("quotaExceeded")) {
+                    plugin.getLogger().severe("YouTube API Quota has been exceeded. Please wait for the daily reset or create a new API Key.");
                     runOnPlayerThread(player, () -> {
-                        player.sendMessage(ChatColor.RED + "Could not connect at this time. The API quota may be full. Please wait or contact an admin.");
+                        player.sendMessage(ChatColor.RED + "Could not connect at this time. The YouTube API quota is full.");
                         player.playSound(player.getLocation(), "entity.villager.no", 1.0f, 1.0f);
                     });
                 } else {
+                    plugin.getLogger().severe("An error occurred while connecting to YouTube for player " + player.getName() + ":");
+                    e.printStackTrace(); // แสดง StackTrace สำหรับ Error อื่นๆ ที่ไม่คาดคิด
                     runOnPlayerThread(player, () -> {
-                        player.sendMessage(ChatColor.RED + "An error occurred while connecting to YouTube.");
+                        player.sendMessage(ChatColor.RED + "An unexpected error occurred while connecting to YouTube.");
                         player.playSound(player.getLocation(), "entity.villager.no", 1.0f, 1.0f);
                     });
                 }
-                e.printStackTrace();
                 stopTaskForPlayerPlatform(player, platform);
             }
         };
+        // --- จบส่วนที่แก้ไข ---
         if (isFolia) {
             Bukkit.getAsyncScheduler().runNow(plugin, (task) -> connectionTask.run());
         } else {
@@ -292,27 +322,31 @@ public class LiveChatCommand implements CommandExecutor, TabCompleter {
                 playerTasks.get(playerUUID).put(platform, task);
             }
         } catch (IOException e) {
+            // --- ส่วนที่แก้ไข: จัดการ Error ของ YouTube ---
+            String errorMessage = e.getMessage();
             final String finalReason;
-            final String googleError = e.getMessage();
 
-            if (googleError != null) {
-                plugin.getLogger().severe("An error occurred while fetching chat messages: " + googleError);
-                if (googleError.contains("liveChatEnded")) {
+            if (errorMessage != null) {
+                if (errorMessage.contains("liveChatEnded")) {
                     finalReason = "The stream has ended.";
-                } else if (googleError.contains("quotaExceeded")) {
+                    // ไม่ต้องแสดง Error ใน console เพราะเป็นเรื่องปกติ
+                } else if (errorMessage.contains("quotaExceeded")) {
                     finalReason = "YouTube API Quota has been exceeded.";
+                    plugin.getLogger().severe("YouTube API Quota has been exceeded. Disconnecting player " + player.getName());
                 } else {
                     finalReason = "An API error occurred.";
-                    runOnPlayerThread(player, () -> player.sendMessage(ChatColor.RED + "Details: " + googleError));
+                    plugin.getLogger().severe("An error occurred while fetching YouTube chat for " + player.getName() + ":");
+                    e.printStackTrace();
                 }
             } else {
                 finalReason = "Connection lost.";
+                e.printStackTrace();
             }
 
-            e.printStackTrace();
             runOnPlayerThread(player, () -> player.sendMessage(ChatColor.YELLOW + "[NamLivechat] Disconnected from " + platform + ". (" + finalReason + ")"));
             stopTaskForPlayerPlatform(player, platform);
         }
+        // --- จบส่วนที่แก้ไข ---
     }
 
     private void runOnPlayerThread(Player player, Runnable runnable) {
@@ -481,14 +515,24 @@ public class LiveChatCommand implements CommandExecutor, TabCompleter {
         }
     }
 
-    public void stopAllTasksForPlayer(Player player) {
+    public void stopAllTasksForPlayer(Player player, boolean silent) {
         if (player == null) return;
-        UUID playerUUID = player.getUniqueId();
-        Map<String, Object> tasks = playerTasks.get(playerUUID);
-        if (tasks != null) {
-            new ArrayList<>(tasks.keySet()).forEach(platform -> stopTaskForPlayerPlatform(player, platform));
+
+        boolean wasYoutubeRunning = playerTasks.get(player.getUniqueId()) != null && !playerTasks.get(player.getUniqueId()).isEmpty();
+        boolean wasTwitchRunning = twitchService.isRunning(player);
+
+        if (wasYoutubeRunning) {
+            Map<String, Object> tasks = playerTasks.get(player.getUniqueId());
+            if (tasks != null) {
+                new ArrayList<>(tasks.keySet()).forEach(platform -> stopTaskForPlayerPlatform(player, platform));
+            }
         }
 
+        if (wasTwitchRunning) {
+            twitchService.stop(player, true);
+        }
+
+        UUID playerUUID = player.getUniqueId();
         bossBarQueue.getOrDefault(playerUUID, new LinkedList<>()).clear();
         Object bossBarTask = bossBarTasks.remove(playerUUID);
         if (bossBarTask != null) {
@@ -501,32 +545,67 @@ public class LiveChatCommand implements CommandExecutor, TabCompleter {
             } catch (Exception e) {}
         }
         Bukkit.getBossBars().forEachRemaining(bossBar -> bossBar.removePlayer(player));
+
+
+        if (!silent && !wasYoutubeRunning && !wasTwitchRunning) {
+            player.sendMessage(ChatColor.RED + "You are not connected to any live chat.");
+            player.playSound(player.getLocation(), "entity.villager.no", 1.0f, 1.0f);
+        } else if (!silent && (wasYoutubeRunning || wasTwitchRunning)) {
+            player.sendMessage(ChatColor.GREEN + "Disconnected from all live chats.");
+            player.playSound(player.getLocation(), "block.note_block.bass", 1.0f, 1.0f);
+        }
     }
 
     public void stopAllTasks() {
         new ArrayList<>(playerTasks.keySet()).forEach(uuid -> {
             Player p = Bukkit.getPlayer(uuid);
-            if(p != null) stopAllTasksForPlayer(p);
+            if (p != null) stopAllTasksForPlayer(p, true);
         });
+        if (twitchService != null) {
+            twitchService.stopAll();
+        }
     }
 
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
+        if (!(sender instanceof Player)) {
+            return Collections.emptyList();
+        }
+        Player player = (Player) sender;
+
         if (args.length == 1) {
             return Arrays.asList("start", "stop").stream()
                     .filter(s -> s.startsWith(args[0].toLowerCase()))
                     .collect(Collectors.toList());
         }
+
         if (args.length == 2) {
-            if ("start".equalsIgnoreCase(args[0]) || "stop".equalsIgnoreCase(args[0])) {
-                List<String> platforms = Arrays.asList("youtube", "tiktok", "twitch");
+            if ("start".equalsIgnoreCase(args[0])) {
+                List<String> platforms = Arrays.asList("youtube", "twitch");
                 return platforms.stream()
+                        .filter(p -> p.startsWith(args[1].toLowerCase()))
+                        .collect(Collectors.toList());
+            } else if ("stop".equalsIgnoreCase(args[0])) {
+                List<String> activePlatforms = new ArrayList<>();
+                if (playerTasks.get(player.getUniqueId()) != null && !playerTasks.get(player.getUniqueId()).isEmpty()) {
+                    activePlatforms.add("youtube");
+                }
+                if (twitchService.isRunning(player)) {
+                    activePlatforms.add("twitch");
+                }
+                return activePlatforms.stream()
                         .filter(p -> p.startsWith(args[1].toLowerCase()))
                         .collect(Collectors.toList());
             }
         }
-        if (args.length == 3 && "start".equalsIgnoreCase(args[0]) && "youtube".equalsIgnoreCase(args[1])) {
-            return Collections.singletonList("<url>");
+
+        if (args.length == 3 && "start".equalsIgnoreCase(args[0])) {
+            if ("youtube".equalsIgnoreCase(args[1])) {
+                return Collections.singletonList("<url/id>");
+            }
+            if ("twitch".equalsIgnoreCase(args[1])) {
+                return Collections.singletonList("<channel/url>");
+            }
         }
         return Collections.emptyList();
     }
