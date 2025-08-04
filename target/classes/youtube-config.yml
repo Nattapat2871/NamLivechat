@@ -1,0 +1,60 @@
+# ================================================== #
+#        NamLivechat YouTube Configuration           #
+# ================================================== #
+
+# ใส่ YouTube Data API v3 Key ของคุณที่นี่
+# ไปที่ https://console.cloud.google.com/ เพื่อสร้างคีย์
+youtube-api-key: "YOUR_API_KEY_HERE"
+
+# รูปแบบข้อความแชทธรรมดาที่จะแสดงในเกม
+# %player% = ชื่อผู้ใช้ YouTube (พร้อมสีตามยศ)
+# %message% = ข้อความ
+message-format: "&c[YouTube] &f%player%&7 : &e%message%"
+
+# ตั้งค่าสีสำหรับยศต่างๆ ในแชท YouTube
+role-colors:
+  owner: "&6"      # สีทองสำหรับเจ้าของช่อง
+  moderator: "&9"  # สีฟ้าสำหรับผู้ดูแล
+  member: "&a"     # สีเขียวสำหรับสมาชิก (Sponsor)
+  default: "&7"    # สีขาวสำหรับผู้ชมทั่วไป
+
+# ================================================== #
+#               YouTube Event Alerts                 #
+# ================================================== #
+youtube-alerts:
+  # ตั้งค่าเป็น true เพื่อเปิดการแจ้งเตือน Super Chat
+  show-super-chat: true
+  # ตั้งค่าเป็น true เพื่อเปิดการแจ้งเตือนเมื่อมีคนสมัครสมาชิกใหม่
+  show-new-members: true
+
+# --- Super Chat ---
+super-chat:
+  # %player%, %amount%, %message%
+  message: "&6[Super Chat] &e%player% &fhas donated &a%amount%&f : &d%message%"
+  sound:
+    name: "entity.firework_rocket.large_blast"
+    volume: 1.0
+    pitch: 1.2
+  # --- NEW: Boss Bar Settings ---
+  boss-bar:
+    enabled: true
+    # %player%, %amount%, %message%
+    message: "&c[YouTube] &e&l%player% &f&ldonated &a&l%amount%&f&l!"
+    color: "YELLOW"
+    duration: 12
+
+# --- New Member ---
+new-member:
+  # %player%
+  message: "&c[YouTube] &bNew Member &d%player% &ahas just subscribed!"
+  sound:
+    name: "entity.player.levelup"
+    volume: 1.0
+    pitch: 1.5
+  # --- NEW: Boss Bar Settings ---
+  boss-bar:
+    enabled: true
+    # %player%
+    message: "&c[YouTube] &d&lWelcome to our new member, &f&l%player%&d&l!"
+    color: "PINK"
+    duration: 10

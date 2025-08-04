@@ -1,17 +1,17 @@
-# ------------------------------------ #
-#       NamLivechat Twitch Config      #
-# ------------------------------------ #
+# ================================================== #
+#         NamLivechat Twitch Configuration           #
+# ================================================== #
 
 # เปิด/ปิด การใช้งานส่วนของ Twitch
 enabled: true
 
 # Access Token ที่ได้จาก https://twitchtokengenerator.com/
-oauth-token: "YOUR_OAUTH_TOKEN_HERE"
+oauth-token: "ACCESS-TOKEN-HERE"
 
 # --- Formatting ---
-# %user% = ชื่อผู้ใช้ Twitch (ใส่สีแล้ว)
+# %user% = ชื่อผู้ใช้ Twitch (ใส่สีแล้วจาก role-colors)
 # %message% = ข้อความ
-format: "&5[Twitch] %user% : &f%message%"
+format: "&5[Twitch] %user%&7 : &f%message%"
 
 # --- Role Colors ---
 # ตั้งค่าสียศสำหรับผู้ใช้ Twitch
@@ -22,9 +22,9 @@ role-colors:
   vip: "&d"
   default: "&7"
 
-# ------------------------------------ #
-#         Twitch Event Alerts          #
-# ------------------------------------ #
+# ================================================== #
+#                Twitch Event Alerts                 #
+# ================================================== #
 events:
   # เปิด/ปิด การแสดงผลการแจ้งเตือนทั้งหมดในส่วนนี้
   enabled: true
@@ -32,49 +32,69 @@ events:
   # --- การสมัครสมาชิกใหม่ (New Subscription) ---
   new-subscription:
     enabled: true
-    # %user% = ชื่อผู้ใช้ที่สมัคร
-    # %tier% = ระดับ Tier (1, 2, หรือ 3)
+    # %user%, %tier%
     message: "&d[Twitch] &f%user% &ehas just subscribed at Tier %tier%!"
     sound:
-      # ชื่อเสียงจาก Minecraft (https://hub.spigotmc.org/javadocs/spigot/org/bukkit/Sound.html)
       name: "entity.player.levelup"
       volume: 1.0
       pitch: 1.2
+    # --- NEW: Boss Bar Settings ---
+    boss-bar:
+      enabled: true
+      # %user%, %tier%
+      message: "&5[Twitch] &d&l%user% &f&lhas just subscribed! (Tier %tier%)"
+      # สีของ Boss Bar: BLUE, GREEN, PINK, PURPLE, RED, WHITE, YELLOW
+      color: "PINK"
+      # ระยะเวลาที่แสดง (วินาที)
+      duration: 10
 
   # --- การต่ออายุสมาชิก (Re-subscription) ---
   resubscription:
     enabled: true
-    # %user% = ชื่อผู้ใช้ที่ต่ออายุ
-    # %months% = จำนวนเดือนทั้งหมดที่ติดตาม
-    # %streak% = จำนวนเดือนที่ติดตามต่อเนื่อง
-    # %tier% = ระดับ Tier (1, 2, หรือ 3)
+    # %user%, %months%, %streak%, %tier%
     message: "&d[Twitch] &f%user% &ehas resubscribed for %months% months! (Currently on a %streak% month streak!)"
     sound:
       name: "entity.player.levelup"
       volume: 1.0
       pitch: 1.5
+    # --- NEW: Boss Bar Settings ---
+    boss-bar:
+      enabled: true
+      # %user%, %months%, %streak%, %tier%
+      message: "&5[Twitch] &a&l%user% &f&lresubscribed for %months% months! (%streak% month streak!)"
+      color: "GREEN"
+      duration: 12
 
   # --- การส่งของขวัญ (Gift Subscription) ---
   gift-subscription:
     enabled: true
-    # %gifter% = ชื่อผู้ใช้ที่ส่งของขวัญ
-    # %recipient% = ชื่อผู้รับของขวัญ
-    # %months% = จำนวนเดือนทั้งหมดที่ผู้ส่งได้สนับสนุนช่องนี้
-    # %tier% = ระดับ Tier (1, 2, หรือ 3)
+    # %gifter%, %recipient%, %tier%
     message: "&d[Twitch] &f%gifter% &ehas gifted a Tier %tier% sub to &f%recipient%&e!"
     sound:
       name: "entity.villager.celebrate"
       volume: 1.0
       pitch: 1.0
+    # --- NEW: Boss Bar Settings ---
+    boss-bar:
+      enabled: true
+      # %gifter%, %recipient%, %tier%
+      message: "&5[Twitch] &e&l%gifter% &f&lhas gifted a sub to &b&l%recipient%&f&l!"
+      color: "YELLOW"
+      duration: 10
 
   # --- การแจกของขวัญให้ชุมชน (Community Gift / Sub Bomb) ---
   community-subscription:
     enabled: true
-    # %gifter% = ชื่อผู้ใช้ที่ส่งของขวัญ
-    # %count% = จำนวน Sub ที่แจก
-    # %tier% = ระดับ Tier (1, 2, หรือ 3)
+    # %gifter%, %count%, %tier%
     message: "&d[Twitch] &f%gifter% &eis gifting %count% Tier %tier% subs to the community!"
     sound:
       name: "entity.firework_rocket.large_blast"
       volume: 1.0
       pitch: 1.0
+    # --- NEW: Boss Bar Settings ---
+    boss-bar:
+      enabled: true
+      # %gifter%, %count%, %tier%
+      message: "&5[Twitch] &b&lSUB BOMB! &f&l%gifter% is gifting &d&l%count% &f&lsubs!"
+      color: "BLUE"
+      duration: 15
