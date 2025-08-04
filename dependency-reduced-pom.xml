@@ -51,6 +51,18 @@
                   <pattern>org.apache</pattern>
                   <shadedPattern>com.namLivechat.libs.apache</shadedPattern>
                 </relocation>
+                <relocation>
+                  <pattern>io.github.jwdeveloper.tiktok</pattern>
+                  <shadedPattern>com.namLivechat.libs.tiktok</shadedPattern>
+                </relocation>
+                <relocation>
+                  <pattern>com.github.jwdeveloper.dependance</pattern>
+                  <shadedPattern>com.namLivechat.libs.dependance</shadedPattern>
+                </relocation>
+                <relocation>
+                  <pattern>com.google.protobuf</pattern>
+                  <shadedPattern>com.namLivechat.libs.protobuf</shadedPattern>
+                </relocation>
               </relocations>
               <filters>
                 <filter>
@@ -71,6 +83,10 @@
       <id>papermc-repo</id>
       <url>https://repo.papermc.io/repository/maven-public/</url>
     </repository>
+    <repository>
+      <id>jitpack.io</id>
+      <url>https://jitpack.io</url>
+    </repository>
   </repositories>
   <dependencies>
     <dependency>
@@ -78,6 +94,13 @@
       <artifactId>paper-api</artifactId>
       <version>1.21.7-R0.1-SNAPSHOT</version>
       <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.github.jwdeveloper</groupId>
+      <artifactId>TikTokLiveJava</artifactId>
+      <version>1.8.11-Release</version>
+      <type>pom</type>
+      <scope>compile</scope>
     </dependency>
   </dependencies>
   <dependencyManagement>

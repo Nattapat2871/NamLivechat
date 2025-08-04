@@ -30,87 +30,69 @@ public class LiveChatCommand implements CommandExecutor {
 
         if (args.length == 0) {
             PluginDescriptionFile desc = plugin.getDescription();
-            // --- ส่วนที่แก้ไข: เปลี่ยนเป็นข้อความภาษาอังกฤษ ---
             player.sendMessage(ChatColor.AQUA + "--- " + desc.getName() + " v" + desc.getVersion() + " ---");
-            player.sendMessage(ChatColor.WHITE + "Brings YouTube & Twitch live chats into Minecraft!");
-            player.sendMessage(ChatColor.GRAY + "Features: Real-time chat, Boss Bar alerts, fully configurable.");
-            player.sendMessage(ChatColor.GREEN + "Usage: /livechat <start|stop> <platform> [url/id]");
-            // ----------------------------------------------------
-
+            player.sendMessage(ChatColor.WHITE + "Brings YouTube, Twitch & TikTok live chats into Minecraft!");
+            player.sendMessage(ChatColor.GREEN + "Usage: /livechat <start|stop> <platform> [url/id/user]");
             player.playSound(player.getLocation(), "entity.experience_orb.pickup", 1.0f, 1.5f);
             return true;
         }
 
         String subCommand = args[0].toLowerCase();
-
         switch (subCommand) {
-            case "start":
-                handleStartCommand(player, args);
-                break;
-            case "stop":
-                handleStopCommand(player, args);
-                break;
-            default:
+            case "start" -> handleStartCommand(player, args);
+            case "stop" -> handleStopCommand(player, args);
+            default -> {
                 player.sendMessage(ChatColor.RED + "Unknown subcommand. Use 'start' or 'stop'.");
                 player.playSound(player.getLocation(), "entity.villager.no", 1.0f, 1.0f);
-                break;
+            }
         }
         return true;
     }
 
     private void handleStartCommand(Player player, String[] args) {
-        if (args.length < 2) {
-            player.sendMessage(ChatColor.RED + "Usage: /livechat start <platform> <url/id>");
-            player.playSound(player.getLocation(), "entity.villager.no", 1.0f, 1.0f);
-            return;
-        }
-
-        String platform = args[1].toLowerCase();
-
         if (args.length < 3) {
-            player.sendMessage(ChatColor.RED + "Usage: /livechat start " + platform + " <url/id>");
+            player.sendMessage(ChatColor.RED + "Usage: /livechat start <platform> <url/id/user>");
             player.playSound(player.getLocation(), "entity.villager.no", 1.0f, 1.0f);
             return;
         }
-
+        String platform = args[1].toLowerCase();
         String input = args[2];
 
-        if (input.equalsIgnoreCase("<url/id>") || input.equalsIgnoreCase("<channel/url>")) {
-            player.sendMessage(ChatColor.RED + "Please provide a real URL or ID, not the example text.");
+        if (input.equalsIgnoreCase("<url/id>") || input.equalsIgnoreCase("<channel/url>") || input.equalsIgnoreCase("<username>")) {
+            player.sendMessage(ChatColor.RED + "Please provide a real URL, ID, or Username.");
             player.playSound(player.getLocation(), "entity.villager.no", 1.0f, 1.0f);
             return;
         }
 
         switch (platform) {
-            case "youtube":
-                if (plugin.getYoutubeService() != null) {
-                    String videoId = plugin.getYoutubeService().getVideoIdFromUrl(input);
-                    String displayName = (videoId != null) ? videoId : input;
-                    player.sendMessage(ChatColor.translateAlternateColorCodes('&', "&eConnecting to YouTube live chat for &c" + displayName + "&e..."));
-                    plugin.getYoutubeService().start(player, input);
-                }
-                break;
-            case "twitch":
-                if (plugin.getTwitchService() != null) {
-                    Matcher matcher = TWITCH_URL_PATTERN.matcher(input);
-                    String channelName = matcher.find() ? matcher.group(1) : input;
-                    player.sendMessage(ChatColor.translateAlternateColorCodes('&', "&eConnecting to Twitch channel &d" + channelName + "&e..."));
-                    plugin.getTwitchService().start(player, channelName);
-                }
-                break;
-            default:
-                player.sendMessage(ChatColor.RED + "Unknown platform. Available platforms: youtube, twitch");
+            case "youtube" -> {
+                player.sendMessage(ChatColor.YELLOW + "Connecting to YouTube...");
+                plugin.getYoutubeService().start(player, input);
+            }
+            case "twitch" -> {
+                Matcher matcher = TWITCH_URL_PATTERN.matcher(input);
+                String channelName = matcher.find() ? matcher.group(1) : input;
+                player.sendMessage(ChatColor.translateAlternateColorCodes('&', "&eConnecting to Twitch channel &d" + channelName + "&e..."));
+                plugin.getTwitchService().start(player, channelName);
+            }
+            case "tiktok" -> {
+                player.sendMessage(ChatColor.translateAlternateColorCodes('&', "&eConnecting to TikTok user &b@" + input.replace("@", "") + "&e..."));
+                plugin.getTiktokService().start(player, input);
+            }
+            default -> {
+                player.sendMessage(ChatColor.RED + "Unknown platform. Use: youtube, twitch, tiktok");
                 player.playSound(player.getLocation(), "entity.villager.no", 1.0f, 1.0f);
-                break;
+            }
         }
     }
 
     private void handleStopCommand(Player player, String[] args) {
         if (args.length < 2) {
-            boolean stoppedYoutube = plugin.getYoutubeService() != null && plugin.getYoutubeService().stop(player, true);
-            boolean stoppedTwitch = plugin.getTwitchService() != null && plugin.getTwitchService().stop(player, true);
+            boolean stoppedAny = plugin.getYoutubeService().stop(player, true) ||
+                    plugin.getTwitchService().stop(player, true) ||
+                    plugin.getTiktokService().stop(player, true);
 
-            if (stoppedYoutube || stoppedTwitch) {
+            if (stoppedAny) {
                 player.sendMessage(ChatColor.GREEN + "Disconnected from all live chats.");
                 player.playSound(player.getLocation(), "block.note_block.bass", 1.0f, 1.0f);
             } else {
@@ -123,20 +105,14 @@ public class LiveChatCommand implements CommandExecutor {
         String platform = args[1].toLowerCase();
         boolean stopped = false;
         switch (platform) {
-            case "youtube":
-                if (plugin.getYoutubeService() != null) {
-                    stopped = plugin.getYoutubeService().stop(player, false);
-                }
-                break;
-            case "twitch":
-                if (plugin.getTwitchService() != null) {
-                    stopped = plugin.getTwitchService().stop(player, false);
-                }
-                break;
-            default:
+            case "youtube" -> stopped = plugin.getYoutubeService().stop(player, false);
+            case "twitch" -> stopped = plugin.getTwitchService().stop(player, false);
+            case "tiktok" -> stopped = plugin.getTiktokService().stop(player, false);
+            default -> {
                 player.sendMessage(ChatColor.RED + "Unknown platform: " + platform);
                 player.playSound(player.getLocation(), "entity.villager.no", 1.0f, 1.0f);
                 return;
+            }
         }
 
         if (stopped) {

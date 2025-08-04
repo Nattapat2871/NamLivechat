@@ -2,6 +2,7 @@ E:\IntelliJ-IDEA\NamLivechat\src\main\java\com\namLivechat\command\AdminCommand.
 E:\IntelliJ-IDEA\NamLivechat\src\main\java\com\namLivechat\command\LiveChatCommand.java
 E:\IntelliJ-IDEA\NamLivechat\src\main\java\com\namLivechat\command\TabCommand.java
 E:\IntelliJ-IDEA\NamLivechat\src\main\java\com\namLivechat\NamLivechat.java
+E:\IntelliJ-IDEA\NamLivechat\src\main\java\com\namLivechat\platform\TikTok\TikTokConnection.java
 E:\IntelliJ-IDEA\NamLivechat\src\main\java\com\namLivechat\platform\TikTok\TikTokService.java
 E:\IntelliJ-IDEA\NamLivechat\src\main\java\com\namLivechat\platform\Twitch\TwitchBossBar.java
 E:\IntelliJ-IDEA\NamLivechat\src\main\java\com\namLivechat\platform\Twitch\TwitchChatListener.java

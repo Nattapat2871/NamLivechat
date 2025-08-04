@@ -4,6 +4,7 @@ com\namLivechat\service\AlertService$BossBarInfo.class
 com\namLivechat\platform\Youtube\YouTubeMessageProcessor.class
 com\namLivechat\command\AdminCommand.class
 com\namLivechat\command\LiveChatCommand.class
+com\namLivechat\platform\TikTok\TikTokConnection.class
 com\namLivechat\platform\Twitch\TwitchConnection.class
 com\namLivechat\platform\Youtube\YouTubeService$LiveStreamInfo.class
 com\namLivechat\platform\Twitch\TwitchChatListener.class

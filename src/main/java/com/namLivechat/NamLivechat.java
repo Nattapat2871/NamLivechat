@@ -3,6 +3,7 @@ package com.namLivechat;
 import com.namLivechat.command.AdminCommand;
 import com.namLivechat.command.LiveChatCommand;
 import com.namLivechat.command.TabCommand;
+import com.namLivechat.platform.TikTok.TikTokService; // แก้ไข import ที่นี่
 import com.namLivechat.platform.Twitch.TwitchService;
 import com.namLivechat.platform.Youtube.YouTubeService;
 import com.namLivechat.service.AlertService;
@@ -20,11 +21,13 @@ public final class NamLivechat extends JavaPlugin {
 
     private YouTubeService youtubeService;
     private TwitchService twitchService;
+    private TikTokService tiktokService;
     private AlertService alertService;
     private boolean isFolia = false;
 
     private FileConfiguration youtubeConfig;
     private FileConfiguration twitchConfig;
+    private FileConfiguration tiktokConfig;
 
     @Override
     public void onEnable() {
@@ -41,6 +44,7 @@ public final class NamLivechat extends JavaPlugin {
         this.alertService = new AlertService(this, isFolia);
         this.youtubeService = new YouTubeService(this, alertService, isFolia);
         this.twitchService = new TwitchService(this, alertService, isFolia);
+        this.tiktokService = new TikTokService(this, alertService, isFolia);
 
         TabCommand tabCompleter = new TabCommand(this);
         getCommand("livechat").setExecutor(new LiveChatCommand(this));
@@ -53,19 +57,18 @@ public final class NamLivechat extends JavaPlugin {
 
     @Override
     public void onDisable() {
-        if(twitchService != null) twitchService.stopAll();
-        if(youtubeService != null) youtubeService.stopAll();
+        if (twitchService != null) twitchService.stopAll();
+        if (youtubeService != null) youtubeService.stopAll();
+        if (tiktokService != null) tiktokService.stopAll();
         getLogger().info("NamLivechat has been disabled.");
     }
 
     private void configureLibraryLogging() {
-        // --- ส่วนที่แก้ไข: ระบุ Logger ให้เฉพาะเจาะจงมากขึ้น ---
-        // ปิด Log ทั้งหมดของ twitch4j, netflix, และ xanthic ที่ไม่จำเป็น
         Logger.getLogger("com.namLivechat.libs.twitch4j.chat.TwitchChat").setLevel(Level.SEVERE);
         Logger.getLogger("com.namLivechat.libs.netflix.config.sources.URLConfigurationSource").setLevel(Level.OFF);
         Logger.getLogger("com.namLivechat.libs.netflix.config.DynamicPropertyFactory").setLevel(Level.OFF);
         Logger.getLogger("com.namLivechat.libs.xanthic.cache.core.CacheApiSettings").setLevel(Level.OFF);
-        // --------------------------------------------------------
+        Logger.getLogger("io.github.jwdeveloper.tiktok").setLevel(Level.SEVERE);
     }
 
     private void displayStartupMessage() {
@@ -86,16 +89,16 @@ public final class NamLivechat extends JavaPlugin {
         super.reloadConfig();
 
         File youtubeConfigFile = new File(getDataFolder(), "youtube-config.yml");
-        if (!youtubeConfigFile.exists()) {
-            saveResource("youtube-config.yml", false);
-        }
+        if (!youtubeConfigFile.exists()) saveResource("youtube-config.yml", false);
         youtubeConfig = YamlConfiguration.loadConfiguration(youtubeConfigFile);
 
         File twitchConfigFile = new File(getDataFolder(), "twitch-config.yml");
-        if (!twitchConfigFile.exists()) {
-            saveResource("twitch-config.yml", false);
-        }
+        if (!twitchConfigFile.exists()) saveResource("twitch-config.yml", false);
         twitchConfig = YamlConfiguration.loadConfiguration(twitchConfigFile);
+
+        File tiktokConfigFile = new File(getDataFolder(), "tiktok-config.yml");
+        if (!tiktokConfigFile.exists()) saveResource("tiktok-config.yml", false);
+        tiktokConfig = YamlConfiguration.loadConfiguration(tiktokConfigFile);
     }
 
     public void reloadPlugin() {
@@ -108,8 +111,10 @@ public final class NamLivechat extends JavaPlugin {
     // Getters
     public FileConfiguration getYoutubeConfig() { return youtubeConfig; }
     public FileConfiguration getTwitchConfig() { return twitchConfig; }
+    public FileConfiguration getTiktokConfig() { return tiktokConfig; }
     public YouTubeService getYoutubeService() { return youtubeService; }
     public TwitchService getTwitchService() { return twitchService; }
+    public TikTokService getTiktokService() { return tiktokService; }
     public AlertService getAlertService() { return alertService; }
     public boolean isFolia() { return isFolia; }
 }
