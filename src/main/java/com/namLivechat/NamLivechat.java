@@ -24,6 +24,7 @@ public final class NamLivechat extends JavaPlugin {
     private TikTokService tiktokService;
     private AlertService alertService;
     private boolean isFolia = false;
+    private boolean isDisabling = false;
 
     private FileConfiguration youtubeConfig;
     private FileConfiguration twitchConfig;
@@ -31,6 +32,7 @@ public final class NamLivechat extends JavaPlugin {
 
     @Override
     public void onEnable() {
+        isDisabling = false;
         try {
             Class.forName("io.papermc.paper.threadedregions.RegionizedServer");
             isFolia = true;
@@ -57,6 +59,7 @@ public final class NamLivechat extends JavaPlugin {
 
     @Override
     public void onDisable() {
+        isDisabling = true;
         if (twitchService != null) twitchService.stopAll();
         if (youtubeService != null) youtubeService.stopAll();
         if (tiktokService != null) tiktokService.stopAll();
@@ -106,6 +109,10 @@ public final class NamLivechat extends JavaPlugin {
         if (youtubeService != null) youtubeService.initialize();
         if (twitchService != null) twitchService.initialize();
         getLogger().info("Configuration files have been reloaded.");
+    }
+
+    public boolean isDisabling() {
+        return isDisabling;
     }
 
     // Getters

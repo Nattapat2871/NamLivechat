@@ -50,7 +50,7 @@ public class TabCommand implements TabCompleter {
                 return switch (args[1].toLowerCase()) {
                     case "youtube" -> Collections.singletonList("<url/id>");
                     case "twitch" -> Collections.singletonList("<channel/url>");
-                    case "tiktok" -> Collections.singletonList("<@username>");
+                    case "tiktok" -> Collections.singletonList("<@username/url>");
                     default -> Collections.emptyList();
                 };
             }

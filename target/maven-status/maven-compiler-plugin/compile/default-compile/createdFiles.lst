@@ -1,6 +1,5 @@
 com\namLivechat\command\TabCommand.class
 com\namLivechat\platform\Twitch\TwitchStreamMonitor.class
-com\namLivechat\service\AlertService$BossBarInfo.class
 com\namLivechat\platform\Youtube\YouTubeMessageProcessor.class
 com\namLivechat\command\AdminCommand.class
 com\namLivechat\command\LiveChatCommand.class

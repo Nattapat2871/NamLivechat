@@ -87,7 +87,7 @@ public class YouTubeMessageProcessor {
             try {
                 BarColor color = BarColor.valueOf(config.getString(path + ".boss-bar.color", "WHITE").toUpperCase());
                 int duration = config.getInt(path + ".boss-bar.duration", 10);
-                alertService.queueBossBar(player, ChatColor.translateAlternateColorCodes('&', bossBarMessage), color, duration);
+                alertService.showBossBarAlert(player, ChatColor.translateAlternateColorCodes('&', bossBarMessage), color, duration);
             } catch (IllegalArgumentException e) {
                 plugin.getLogger().warning("Invalid Boss Bar color in youtube-config.yml for " + type);
             }

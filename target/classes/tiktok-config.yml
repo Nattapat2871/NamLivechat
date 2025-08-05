@@ -2,28 +2,29 @@
 #         NamLivechat TikTok Configuration           #
 # ================================================== #
 
-# เปิด/ปิด การใช้งานส่วนของ TikTok
 enabled: true
 
-# รูปแบบข้อความแชทธรรมดาที่จะแสดงในเกม
-# %user% = ชื่อผู้ใช้ TikTok
-# %message% = ข้อความ
-message-format: "&b[TikTok] &f%user%&7 : &f%message%"
+# %user%, %message%
+message-format: "&8[&bTi&fkT&cok&8] &9%user% &7 : &a%message%"
+
+# --- NEW: Role Colors ---
+# ตั้งค่าสียศสำหรับผู้ใช้ TikTok
+role-colors:
+  moderator: "&9"      # สีฟ้าสำหรับผู้ดูแล
+  subscriber: "&a"   # สีเขียวสำหรับผู้ติดตาม (Subscribe)
+  gifter: "&6"       # สีทองสำหรับคนที่เคยส่ง Gift
+  default: "&7"      # สีเทาสำหรับผู้ชมทั่วไป
 
 # ================================================== #
 #                 TikTok Event Alerts                #
 # ================================================== #
 events:
-  # เปิด/ปิด การแสดงผลการแจ้งเตือนทั้งหมดในส่วนนี้
   enabled: true
 
   # --- การส่งของขวัญ (Gifts) ---
   gift:
     enabled: true
-    # %user% = ชื่อผู้ใช้ที่ส่งของขวัญ
-    # %gift_name% = ชื่อของขวัญ
-    # %amount% = จำนวนของขวัญที่ส่ง
-    # %total_value% = มูลค่ารวมของเพชร (Diamonds)
+    # %user%, %gift_name%, %amount%, %total_value%
     message: "&e[TikTok Gift] &f%user% &ahas sent %amount%x &d%gift_name% &a(Value: %total_value% Diamonds)!"
     sound:
       name: "entity.villager.celebrate"
@@ -38,7 +39,7 @@ events:
   # --- การกดติดตาม (Follow) ---
   follow:
     enabled: true
-    # %user% = ชื่อผู้ใช้ที่กดติดตาม
+    # %user%
     message: "&b[TikTok] &f%user% &ehas followed the stream!"
     sound:
       name: "entity.player.levelup"

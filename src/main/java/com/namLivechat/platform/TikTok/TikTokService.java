@@ -1,4 +1,4 @@
-package com.namLivechat.platform.TikTok;
+package com.namLivechat.platform.TikTok; // แก้ไข Package name
 
 import com.namLivechat.NamLivechat;
 import com.namLivechat.service.AlertService;
@@ -28,7 +28,6 @@ public class TikTokService {
             return;
         }
 
-        // ลบ @ ออกถ้าผู้ใช้ใส่มา
         if (username.startsWith("@")) {
             username = username.substring(1);
         }

@@ -179,7 +179,7 @@ public class YouTubeService {
     }
 
     private void runOnPlayerThread(Player player, Runnable runnable) {
-        if (player == null || !player.isOnline()) return;
+        if (plugin.isDisabling() || player == null || !player.isOnline()) return;
         if (isFolia) {
             player.getScheduler().run(plugin, (task) -> runnable.run(), null);
         } else {

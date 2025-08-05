@@ -14,7 +14,8 @@ import java.util.regex.Pattern;
 public class LiveChatCommand implements CommandExecutor {
 
     private final NamLivechat plugin;
-    private static final Pattern TWITCH_URL_PATTERN = Pattern.compile("^(?:https?:\\/\\/)?(?:www\\.)?twitch\\.tv\\/([a-zA-Z0-9_]+)");
+    private static final Pattern TWITCH_URL_PATTERN = Pattern.compile("twitch\\.tv/([a-zA-Z0-9_]+)");
+    private static final Pattern TIKTOK_URL_PATTERN = Pattern.compile("tiktok\\.com/@([a-zA-Z0-9_.]+)");
 
     public LiveChatCommand(NamLivechat plugin) {
         this.plugin = plugin;
@@ -58,8 +59,8 @@ public class LiveChatCommand implements CommandExecutor {
         String platform = args[1].toLowerCase();
         String input = args[2];
 
-        if (input.equalsIgnoreCase("<url/id>") || input.equalsIgnoreCase("<channel/url>") || input.equalsIgnoreCase("<username>")) {
-            player.sendMessage(ChatColor.RED + "Please provide a real URL, ID, or Username.");
+        if (input.startsWith("<") && input.endsWith(">")) {
+            player.sendMessage(ChatColor.RED + "Please provide a real URL, ID, or Username, not the example text.");
             player.playSound(player.getLocation(), "entity.villager.no", 1.0f, 1.0f);
             return;
         }
@@ -76,8 +77,10 @@ public class LiveChatCommand implements CommandExecutor {
                 plugin.getTwitchService().start(player, channelName);
             }
             case "tiktok" -> {
-                player.sendMessage(ChatColor.translateAlternateColorCodes('&', "&eConnecting to TikTok user &b@" + input.replace("@", "") + "&e..."));
-                plugin.getTiktokService().start(player, input);
+                Matcher matcher = TIKTOK_URL_PATTERN.matcher(input);
+                String username = matcher.find() ? matcher.group(1) : input;
+                player.sendMessage(ChatColor.translateAlternateColorCodes('&', "&eConnecting to TikTok user &b@" + username.replace("@", "") + "&e..."));
+                plugin.getTiktokService().start(player, username);
             }
             default -> {
                 player.sendMessage(ChatColor.RED + "Unknown platform. Use: youtube, twitch, tiktok");

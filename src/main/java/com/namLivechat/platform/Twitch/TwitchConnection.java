@@ -186,7 +186,7 @@ public class TwitchConnection {
                 try {
                     BarColor color = BarColor.valueOf(config.getString(path + ".boss-bar.color", "WHITE").toUpperCase());
                     int duration = config.getInt(path + ".boss-bar.duration", 10);
-                    alertService.queueBossBar(player, ChatColor.translateAlternateColorCodes('&', bossBarMessage), color, duration);
+                    alertService.showBossBarAlert(player, ChatColor.translateAlternateColorCodes('&', bossBarMessage), color, duration);
                 } catch (IllegalArgumentException e) {
                     plugin.getLogger().warning("Invalid Boss Bar color in twitch-config.yml for " + eventType);
                 }
@@ -243,7 +243,7 @@ public class TwitchConnection {
     }
 
     private void runOnPlayerThread(Player player, Runnable runnable) {
-        if (player == null || !player.isOnline()) return;
+        if (plugin.isDisabling() || player == null || !player.isOnline()) return;
         if (isFolia) {
             player.getScheduler().run(plugin, task -> runnable.run(), null);
         } else {
@@ -252,6 +252,7 @@ public class TwitchConnection {
     }
 
     private void runAsyncTask(Runnable runnable) {
+        if (plugin.isDisabling()) return;
         if (isFolia) {
             Bukkit.getAsyncScheduler().runNow(plugin, task -> runnable.run());
         } else {
