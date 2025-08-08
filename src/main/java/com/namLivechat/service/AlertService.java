@@ -6,11 +6,9 @@ import org.bukkit.Bukkit;
 import org.bukkit.boss.BarColor;
 import org.bukkit.boss.BarStyle;
 import org.bukkit.boss.BossBar;
-import org.bukkit.boss.KeyedBossBar;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitTask;
 
-import java.util.Iterator;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -22,14 +20,12 @@ public class AlertService {
     private final Map<UUID, BossBar> activeBossBars = new ConcurrentHashMap<>();
     private final boolean isFolia;
 
-    public AlertService(NamLivechat plugin, boolean isFolia) {
+    public AlertService(NamLivechat plugin) {
         this.plugin = plugin;
-        this.isFolia = isFolia;
+        this.isFolia = plugin.isFolia();
     }
 
-    // --- เมธอดถูกเปลี่ยนชื่อและแก้ไข Logic ---
     public void showBossBarAlert(Player player, String title, BarColor color, int duration) {
-        // หยุดและล้าง Boss Bar เก่าทิ้งทันที
         stopBossBar(player);
 
         UUID playerUUID = player.getUniqueId();

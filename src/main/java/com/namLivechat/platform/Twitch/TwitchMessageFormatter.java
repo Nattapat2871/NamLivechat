@@ -1,15 +1,12 @@
 package com.namLivechat.platform.Twitch;
 
 import com.github.twitch4j.chat.events.channel.ChannelMessageEvent;
-import com.github.twitch4j.common.enums.CommandPermission; // เพิ่ม import นี้
-import org.bukkit.ChatColor; // เพิ่ม import นี้
+import com.github.twitch4j.common.enums.CommandPermission;
+import org.bukkit.ChatColor;
 import org.bukkit.configuration.file.FileConfiguration;
 
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
 import java.util.Map;
-import java.util.Set; // เพิ่ม import นี้
+import java.util.Set;
 
 public class TwitchMessageFormatter {
     private final FileConfiguration config;
@@ -17,42 +14,58 @@ public class TwitchMessageFormatter {
 
     public TwitchMessageFormatter(FileConfiguration config) {
         this.config = config;
-        // ใช้ format จากไฟล์ twitch-config.yml
-        this.messageFormat = config.getString("format", "&d[Twitch] %user%&7: &f%message%");
+        this.messageFormat = config.getString("format", "&5[Twitch] %user% : &f%message%");
     }
 
     public String format(ChannelMessageEvent event) {
-        // --- ส่วนที่แก้ไข: นำสีของยศมาใส่ให้ชื่อ User ---
-        String userColor = getTwitchUserColor(event.getPermissions());
-        String coloredUser = userColor + event.getUser().getName();
+        String badges = formatBadges(event.getMessageEvent().getBadges());
+
+        // --- ส่วนที่แก้ไข: เพิ่มการดึงสียศ ---
+        String userColor = getAuthorColor(event.getPermissions());
+        String coloredUsername = userColor + event.getUser().getName();
+        // ------------------------------------
 
         String message = event.getMessage();
         String messageWithoutEmotes = removeTwitchEmotes(message, event.getMessageEvent().getTags().get("emotes"));
 
-        String formattedMessage = this.messageFormat
-                .replace("%user%", coloredUser) // ใช้ %user% ที่มีสีแล้ว
+        String result = this.messageFormat
+                .replace("%badges%", badges)
+                .replace("%user%", coloredUsername) // ใช้ชื่อที่ใส่สีแล้ว
                 .replace("%message%", messageWithoutEmotes);
 
-        // --- ส่วนที่แก้ไข: แปลงโค้ดสีทั้งหมดก่อนส่งออกไป ---
-        return ChatColor.translateAlternateColorCodes('&', formattedMessage);
+        return ChatColor.translateAlternateColorCodes('&', result);
     }
 
-    // --- ส่วนที่แก้ไข: เพิ่มเมธอดนี้กลับเข้ามาเพื่อดึงสีตามยศ ---
-    private String getTwitchUserColor(Set<CommandPermission> permissions) {
+    private String formatBadges(Map<String, String> badges) {
+        if (badges == null || badges.isEmpty()) {
+            return "";
+        }
+        StringBuilder formattedBadges = new StringBuilder();
+        for (String badge : badges.keySet()) {
+            String color = config.getString("chat-format.badge-colors." + badge, "&f");
+            String symbol = config.getString("chat-format.badge-symbols." + badge, "[" + badge.substring(0, 1).toUpperCase() + "]");
+            formattedBadges.append(color).append(symbol).append("&r ");
+        }
+        return formattedBadges.toString();
+    }
+
+    // --- เพิ่มเมธอดใหม่: สำหรับดึงสีตามยศ ---
+    private String getAuthorColor(Set<CommandPermission> permissions) {
         if (permissions.contains(CommandPermission.BROADCASTER)) {
             return config.getString("role-colors.broadcaster", "&6");
         } else if (permissions.contains(CommandPermission.MODERATOR)) {
             return config.getString("role-colors.moderator", "&9");
-        } else if (permissions.contains(CommandPermission.SUBSCRIBER)) {
-            return config.getString("role-colors.subscriber", "&a");
         } else if (permissions.contains(CommandPermission.VIP)) {
             return config.getString("role-colors.vip", "&d");
+        } else if (permissions.contains(CommandPermission.SUBSCRIBER)) {
+            return config.getString("role-colors.subscriber", "&a");
         }
         return config.getString("role-colors.default", "&7");
     }
+    // ------------------------------------------
 
     private String removeTwitchEmotes(String message, String emotesTag) {
-        if (emotesTag == null || emotesTag.isEmpty() || message.isEmpty()) {
+        if (message == null || message.isEmpty() || emotesTag == null || emotesTag.isEmpty()) {
             return message;
         }
 
@@ -67,17 +80,13 @@ public class TwitchMessageFormatter {
             for (String range : ranges) {
                 String[] pos = range.split("-");
                 if (pos.length < 2) continue;
-
                 try {
                     int start = Integer.parseInt(pos[0]);
                     int end = Integer.parseInt(pos[1]);
-
                     for (int i = start; i <= end && i < message.length(); i++) {
                         isEmoteChar[i] = true;
                     }
-                } catch (NumberFormatException e) {
-                    // Ignore
-                }
+                } catch (NumberFormatException ignored) {}
             }
         }
 

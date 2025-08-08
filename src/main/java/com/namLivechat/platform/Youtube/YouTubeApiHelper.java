@@ -24,7 +24,6 @@ public class YouTubeApiHelper {
 
     public YouTubeApiHelper(NamLivechat plugin) {
         this.plugin = plugin;
-        initialize();
     }
 
     public void initialize() {
@@ -57,8 +56,8 @@ public class YouTubeApiHelper {
     }
 
     public YouTubeService.LiveStreamInfo getLiveChatId(String videoId) throws IOException {
-        YouTube.Videos.List request = youtube.videos().list("liveStreamingDetails,snippet");
-        VideoListResponse response = request.setId(videoId).setKey(plugin.getYoutubeConfig().getString("youtube-api-key")).execute();
+        YouTube.Videos.List request = youtube.videos().list(Collections.singletonList("liveStreamingDetails,snippet"));
+        VideoListResponse response = request.setId(Collections.singletonList(videoId)).setKey(plugin.getYoutubeConfig().getString("youtube-api-key")).execute();
 
         if (response.getItems().isEmpty()) return null;
 
@@ -75,7 +74,7 @@ public class YouTubeApiHelper {
 
     public LiveChatMessageListResponse getLiveChatMessages(String liveChatId, String pageToken) throws IOException {
         YouTube.LiveChatMessages.List chatRequest = youtube.liveChatMessages()
-                .list(liveChatId, "snippet,authorDetails")
+                .list(liveChatId, Collections.singletonList("snippet,authorDetails"))
                 .setKey(plugin.getYoutubeConfig().getString("youtube-api-key"));
 
         if (pageToken != null) chatRequest.setPageToken(pageToken);

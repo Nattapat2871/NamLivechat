@@ -22,12 +22,14 @@ public class TabCommand implements TabCompleter {
 
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
-        if (!(sender instanceof Player)) return Collections.emptyList();
+        if (!(sender instanceof Player)) {
+            return Collections.emptyList();
+        }
         Player player = (Player) sender;
 
         if (command.getName().equalsIgnoreCase("namlivechat")) {
             if (args.length == 1) {
-                return filterAndCollect(Collections.singletonList("reload"), args[0]);
+                return filterAndCollect(Arrays.asList("reload", "update"), args[0]);
             }
         } else if (command.getName().equalsIgnoreCase("livechat")) {
             if (args.length == 1) {
@@ -36,19 +38,44 @@ public class TabCommand implements TabCompleter {
 
             if (args.length == 2) {
                 if ("start".equalsIgnoreCase(args[0])) {
-                    return filterAndCollect(Arrays.asList("youtube", "twitch", "tiktok"), args[1]);
+                    // --- ส่วนที่แก้ไข: แสดงเฉพาะแพลตฟอร์มที่ยังไม่ได้เชื่อมต่อ ---
+                    List<String> availablePlatforms = new ArrayList<>(Arrays.asList("youtube", "twitch", "tiktok"));
+
+                    if (plugin.getYoutubeService() != null && plugin.getYoutubeService().isConnected(player)) {
+                        availablePlatforms.remove("youtube");
+                    }
+                    if (plugin.getTwitchService() != null && plugin.getTwitchService().isRunning(player)) {
+                        availablePlatforms.remove("twitch");
+                    }
+                    if (plugin.getTiktokService() != null && plugin.getTiktokService().isConnected(player)) {
+                        availablePlatforms.remove("tiktok");
+                    }
+
+                    // เพิ่ม <url> เข้าไปในคำแนะนำ ถ้าผู้ใช้ยังไม่ได้พิมพ์อะไร
+                    if (args[1].isEmpty() && !availablePlatforms.isEmpty()) {
+                        availablePlatforms.add("<url>");
+                    }
+
+                    return filterAndCollect(availablePlatforms, args[1]);
+
                 } else if ("stop".equalsIgnoreCase(args[0])) {
                     List<String> activePlatforms = new ArrayList<>();
-                    if (plugin.getYoutubeService().isConnected(player)) activePlatforms.add("youtube");
-                    if (plugin.getTwitchService().isRunning(player)) activePlatforms.add("twitch");
-                    if (plugin.getTiktokService().isConnected(player)) activePlatforms.add("tiktok");
+                    if (plugin.getYoutubeService() != null && plugin.getYoutubeService().isConnected(player)) {
+                        activePlatforms.add("youtube");
+                    }
+                    if (plugin.getTwitchService() != null && plugin.getTwitchService().isRunning(player)) {
+                        activePlatforms.add("twitch");
+                    }
+                    if (plugin.getTiktokService() != null && plugin.getTiktokService().isConnected(player)) {
+                        activePlatforms.add("tiktok");
+                    }
                     return filterAndCollect(activePlatforms, args[1]);
                 }
             }
 
             if (args.length == 3 && "start".equalsIgnoreCase(args[0])) {
                 return switch (args[1].toLowerCase()) {
-                    case "youtube" -> Collections.singletonList("<url/id>");
+                    case "youtube" -> Collections.singletonList("<id/url>");
                     case "twitch" -> Collections.singletonList("<channel/url>");
                     case "tiktok" -> Collections.singletonList("<@username/url>");
                     default -> Collections.emptyList();

@@ -4,8 +4,8 @@ import com.google.api.services.youtube.model.LiveChatMessage;
 import com.google.api.services.youtube.model.LiveChatMessageListResponse;
 import com.namLivechat.NamLivechat;
 import com.namLivechat.service.AlertService;
+import com.namLivechat.service.MessageHandler;
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitTask;
 
@@ -18,6 +18,7 @@ public class YouTubeService {
 
     private final NamLivechat plugin;
     private final AlertService alertService;
+    private final MessageHandler messageHandler;
     private final YouTubeApiHelper apiHelper;
     private final boolean isFolia;
 
@@ -26,30 +27,32 @@ public class YouTubeService {
     private final Map<UUID, Long> startTimeStamps = new ConcurrentHashMap<>();
     private final Map<UUID, String> connectedChannels = new ConcurrentHashMap<>();
 
-    public YouTubeService(NamLivechat plugin, AlertService alertService, boolean isFolia) {
+    public YouTubeService(NamLivechat plugin) {
         this.plugin = plugin;
-        this.alertService = alertService;
-        this.isFolia = isFolia;
+        this.alertService = plugin.getAlertService();
+        this.messageHandler = plugin.getMessageHandler();
+        this.isFolia = plugin.isFolia();
         this.apiHelper = new YouTubeApiHelper(plugin);
         initialize();
     }
 
     public void initialize() {
         apiHelper.initialize();
-        if (apiHelper.isAvailable()) {
-            plugin.getLogger().info("YouTube Service has been successfully initialized.");
-        } else {
-            plugin.getLogger().warning("YouTube API Key is not set. YouTube feature will be disabled.");
-        }
     }
 
     public void start(Player player, String input) {
-        if (!apiHelper.isAvailable()) {
-            player.sendMessage(ChatColor.RED + "YouTube feature is disabled. Please check the server console.");
+        if (!plugin.getYoutubeConfig().getBoolean("enabled", false)) {
+            messageHandler.sendMessage(player, "youtube_disabled");
+            player.playSound(player.getLocation(), "entity.villager.no", 1.0f, 1.0f);
             return;
         }
-        if (playerTasks.containsKey(player.getUniqueId())) {
-            player.sendMessage(ChatColor.RED + "You are already connected to a YouTube chat.");
+
+        if (!apiHelper.isAvailable()) {
+            messageHandler.sendMessage(player, "youtube_no_api_key");
+            return;
+        }
+        if (isConnected(player)) {
+            messageHandler.sendFormattedMessage(player, "already_connected", "%platform%", "YouTube");
             return;
         }
 
@@ -63,8 +66,8 @@ public class YouTubeService {
             try {
                 LiveStreamInfo streamInfo = apiHelper.getLiveChatId(finalVideoId);
                 if (streamInfo == null) {
-                    runOnPlayerThread(player, () -> player.sendMessage(ChatColor.RED + "Could not find an active live stream for this Video ID/URL."));
-                    playerTasks.remove(player.getUniqueId());
+                    runOnPlayerThread(player, () -> messageHandler.sendMessage(player, "youtube_not_live"));
+                    stop(player, true);
                     return;
                 }
 
@@ -72,9 +75,11 @@ public class YouTubeService {
                 startTimeStamps.put(playerUUID, System.currentTimeMillis());
                 connectedChannels.put(playerUUID, streamInfo.channelTitle());
 
-                String connectingMessage = "&aConnecting to: &f%videoTitle% &a(Channel: &f%channelTitle%&a)".replace("%videoTitle%", streamInfo.videoTitle()).replace("%channelTitle%", streamInfo.channelTitle());
                 runOnPlayerThread(player, () -> {
-                    player.sendMessage(ChatColor.translateAlternateColorCodes('&', connectingMessage));
+                    messageHandler.sendFormattedMessage(player, "connect_success_youtube",
+                            "%title%", streamInfo.videoTitle(),
+                            "%channel%", streamInfo.channelTitle()
+                    );
                     player.playSound(player.getLocation(), "entity.experience_orb.pickup", 1.0f, 1.0f);
                 });
 
@@ -83,16 +88,15 @@ public class YouTubeService {
             } catch (Exception e) {
                 String message = e.getMessage() != null ? e.getMessage().toLowerCase() : "";
                 if (message.contains("api key not valid") || message.contains("api_key_invalid")) {
-                    runOnPlayerThread(player, () -> player.sendMessage(ChatColor.RED + "YouTube API Key is invalid. Please contact an admin."));
+                    runOnPlayerThread(player, () -> messageHandler.sendMessage(player, "youtube_invalid_key"));
                     plugin.getLogger().severe("Failed to connect to YouTube: Invalid API Key. Please check youtube-config.yml.");
                 } else if (message.contains("quotaexceeded")) {
-                    runOnPlayerThread(player, () -> player.sendMessage(ChatColor.RED + "YouTube API Quota has been exceeded for today."));
+                    runOnPlayerThread(player, () -> messageHandler.sendMessage(player, "youtube_quota_exceeded"));
                     plugin.getLogger().severe("Failed to connect to YouTube: API Quota Exceeded.");
                 } else {
-                    runOnPlayerThread(player, () -> player.sendMessage(ChatColor.RED + "An unexpected error occurred while connecting to YouTube."));
-                    plugin.getLogger().severe("YouTube connection error for " + player.getName() + ": " + e.getMessage());
+                    plugin.logDebug("YouTube connection error for " + player.getName() + ": " + e.getMessage());
                 }
-                playerTasks.remove(player.getUniqueId());
+                stop(player, true);
             }
         };
 
@@ -121,9 +125,6 @@ public class YouTubeService {
         startTimeStamps.remove(playerUUID);
         connectedChannels.remove(playerUUID);
 
-        if (!silent) {
-            // Let LiveChatCommand handle the message
-        }
         return true;
     }
 
@@ -136,25 +137,32 @@ public class YouTubeService {
 
     private void fetchAndDisplayMessages(Player player, String liveChatId) {
         UUID playerUUID = player.getUniqueId();
-        if (!player.isOnline() || !playerTasks.containsKey(playerUUID)) {
+        if (!isConnected(player)) {
             return;
         }
 
         try {
             String pageToken = nextPageTokens.get(playerUUID);
             LiveChatMessageListResponse response = apiHelper.getLiveChatMessages(liveChatId, pageToken);
-            if (response == null) return;
+
+            if (response == null) {
+                plugin.logDebug("API response for getLiveChatMessages was null. Stopping poll for " + player.getName());
+                stop(player, true);
+                return;
+            }
 
             nextPageTokens.put(playerUUID, response.getNextPageToken());
             long lastMessageTime = startTimeStamps.getOrDefault(playerUUID, 0L);
             long maxTimestamp = lastMessageTime;
 
-            YouTubeMessageProcessor processor = new YouTubeMessageProcessor(plugin, alertService, player);
-            for (LiveChatMessage item : response.getItems()) {
-                long messageTimestamp = item.getSnippet().getPublishedAt().getValue();
-                if (messageTimestamp > lastMessageTime) {
-                    runOnPlayerThread(player, () -> processor.handleMessage(item));
-                    if (messageTimestamp > maxTimestamp) maxTimestamp = messageTimestamp;
+            YouTubeMessageProcessor processor = new YouTubeMessageProcessor(plugin, player);
+            if (response.getItems() != null) {
+                for (LiveChatMessage item : response.getItems()) {
+                    long messageTimestamp = item.getSnippet().getPublishedAt().getValue();
+                    if (messageTimestamp > lastMessageTime) {
+                        runOnPlayerThread(player, () -> processor.handleMessage(item));
+                        if (messageTimestamp > maxTimestamp) maxTimestamp = messageTimestamp;
+                    }
                 }
             }
             startTimeStamps.put(playerUUID, maxTimestamp);
@@ -170,10 +178,11 @@ public class YouTubeService {
             }
             playerTasks.put(playerUUID, task);
 
-        } catch (IOException e) {
+        } catch (Exception e) {
+            plugin.logDebug("An exception occurred during YouTube chat polling for " + player.getName() + ": " + e.getMessage());
+
             String channelTitle = connectedChannels.getOrDefault(player.getUniqueId(), "YouTube");
-            String message = String.format("&aDisconnected from &cYouTube &f%s&a's live chat.", channelTitle);
-            runOnPlayerThread(player, () -> player.sendMessage(ChatColor.translateAlternateColorCodes('&', message)));
+            runOnPlayerThread(player, () -> messageHandler.sendFormattedMessage(player, "disconnect_stream_ended_youtube", "%channel%", channelTitle));
             stop(player, true);
         }
     }

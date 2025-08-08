@@ -1,0 +1,74 @@
+#
+# ไฟล์ภาษาไทยสำหรับ NamLivechat (Thai Messages for NamLivechat)
+#
+
+# General command feedback / ข้อความตอบกลับทั่วไป
+prefix: "&a[NamLivechat] &r"
+error_prefix: "&c[NamLivechat] &r"
+player_only: "คำสั่งนี้สามารถใช้ได้โดยผู้เล่นเท่านั้น"
+no_permission: "&cคุณไม่มีสิทธิ์ใช้คำสั่งนี้"
+unknown_subcommand: "&cไม่รู้จักคำสั่งย่อย. ใช้ '/livechat <start|stop>'"
+unknown_platform: "&cไม่รู้จักแพลตฟอร์ม. ใช้: youtube, twitch, tiktok"
+
+# Help Message (/livechat) / ข้อความช่วยเหลือ
+help_header: "&a--- NamLivechat v%version% ---"
+help_description: "&fนำแชทสดจาก YouTube, Twitch และ TikTok เข้ามาใน Minecraft!"
+help_usage: "&aวิธีใช้: /livechat <start|stop> <platform> [ลิงก์/ไอดี/ชื่อผู้ใช้]"
+
+# Start Command / คำสั่ง start
+start_usage: "&cวิธีใช้: /livechat start <ลิงก์> หรือ /livechat start <แพลตฟอร์ม> <ลิงก์/ไอดี/ชื่อผู้ใช้>"
+start_placeholder_error: "&cกรุณาใส่ลิงก์, ไอดี, หรือชื่อผู้ใช้จริง ไม่ใช่ข้อความตัวอย่าง"
+connecting: "&eกำลังเชื่อมต่อไปยัง %platform%..."
+connecting_channel: "&eกำลังเชื่อมต่อไปยังช่อง &d%channel%&e ของ %platform%..."
+connecting_user: "&eกำลังเชื่อมต่อไปยังผู้ใช้ &b@%user%&e บน %platform%..."
+already_connected: "&cคุณเชื่อมต่อกับแชทของ %platform% อยู่แล้ว"
+
+# Stop Command / คำสั่ง stop
+stop_success: "&aตัดการเชื่อมต่อจากแชทสดของ %platform% แล้ว"
+stop_all_success: "&aตัดการเชื่อมต่อจากแชทสดทั้งหมดแล้ว"
+not_connected: "&cคุณยังไม่ได้เชื่อมต่อกับแชทสดใดๆ"
+not_connected_platform: "&cคุณยังไม่ได้เชื่อมต่อกับแชทสดของ %platform%"
+
+# Connection Status / สถานะการเชื่อมต่อ
+connect_success_youtube: "&aเชื่อมต่อสำเร็จ: &f%title% &a(ช่อง: &f%channel%&a)"
+connect_success_twitch: "&aเชื่อมต่อสำเร็จ: &5Twitch live &f%title% &a(ช่อง: &f%channel%&a)"
+connect_success_tiktok: "&aเชื่อมต่อสำเร็จ: &f%title% &a(ไลฟ์ TikTok ของ @%user%)"
+
+disconnect_stream_ended_youtube: "&aตัดการเชื่อมต่อจากแชทสด &cYouTube&a ของ &f%channel%&a เนื่องจากสตรีมจบแล้ว"
+disconnect_stream_ended_twitch: "&aตัดการเชื่อมต่อจากแชทสด &5Twitch&a ของ &f%channel%&a เนื่องจากสตรีมจบแล้ว"
+disconnect_stream_ended_tiktok: "&eสตรีมของ @%user% จบแล้ว"
+
+# Platform-specific Errors / ข้อผิดพลาดเฉพาะแพลตฟอร์ม
+youtube_disabled: "&cฟีเจอร์ YouTube ถูกปิดใช้งานใน config"
+youtube_no_api_key: "&cฟีเจอร์ YouTube ถูกปิดใช้งาน กรุณาตรวจสอบ API key"
+youtube_invalid_key: "&cYouTube API Key ไม่ถูกต้อง กรุณาติดต่อผู้ดูแลระบบ"
+youtube_quota_exceeded: "&cโควต้าการใช้งาน YouTube API ของวันนี้เต็มแล้ว"
+youtube_not_live: "&cไม่พบสตรีมสดสำหรับวิดีโอไอดี/ลิงก์นี้"
+
+twitch_disabled: "&cฟีเจอร์ Twitch ถูกปิดใช้งานใน config"
+twitch_no_token: "&cยังไม่ได้ตั้งค่า Twitch OAuth Token ใน twitch-config.yml"
+twitch_invalid_token: "&cเชื่อมต่อ Twitch ไม่สำเร็จ! เนื่องจาก OAuth Token ไม่ถูกต้องหรือหมดอายุ"
+twitch_not_live: "&cช่อง '%channel%' ยังไม่ได้ถ่ายทอดสด"
+twitch_connect_fail: "&cไม่สามารถเชื่อมต่อ Twitch ได้ ช่องอาจออฟไลน์อยู่หรือ API อาจขัดข้องชั่วคราว"
+
+tiktok_disabled: "&cฟีเจอร์ TikTok ถูกปิดใช้งานใน config"
+tiktok_connect_fail: "&cไม่สามารถเชื่อมต่อ TikTok ได้ ผู้ใช้อาจยังไม่ไลฟ์หรือชื่อผู้ใช้ไม่ถูกต้อง"
+tiktok_user_not_found: "&cไม่พบผู้ใช้ TikTok ชื่อ '%user%'"
+tiktok_user_offline: "&cผู้ใช้ @%user% ยังไม่ได้ถ่ายทอดสด"
+
+# Update Checker / ตัวตรวจสอบอัปเดต
+update_available:
+  - "&a--------------------------------------------------"
+  - "&aNamLivechat เวอร์ชั่นใหม่พร้อมให้ดาวน์โหลดแล้ว: &6%version%"
+  - "&eใช้คำสั่ง '/namlivechat update' เพื่อดาวน์โหลด"
+  - "&a--------------------------------------------------"
+update_downloading: "&eกำลังดาวน์โหลดอัปเดต %version%..."
+update_success: "&aดาวน์โหลดอัปเดตสำเร็จ!"
+update_restart: "&eกรุณารีสตาร์ทเซิร์ฟเวอร์เพื่อเริ่มใช้งานอัปเดต"
+update_latest: "&aคุณกำลังใช้งานเวอร์ชั่นล่าสุดอยู่แล้ว"
+update_disabled: "&cคำสั่งอัปเดตถูกปิดใช้งานใน config"
+update_fail: "&cดาวน์โหลดอัปเดตไม่สำเร็จ กรุณาตรวจสอบคอนโซล"
+
+# Admin Command / คำสั่งแอดมิน
+admin_usage: "&eวิธีใช้: /namlivechat <reload|update>"
+admin_reload: "&aรีโหลดการตั้งค่าของ NamLivechat เรียบร้อยแล้ว"

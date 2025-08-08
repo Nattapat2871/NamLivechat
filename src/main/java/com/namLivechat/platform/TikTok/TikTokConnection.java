@@ -2,7 +2,9 @@ package com.namLivechat.platform.TikTok;
 
 import com.namLivechat.NamLivechat;
 import com.namLivechat.service.AlertService;
+import com.namLivechat.service.MessageHandler;
 import io.github.jwdeveloper.tiktok.TikTokLive;
+import io.github.jwdeveloper.tiktok.data.models.gifts.Gift;
 import io.github.jwdeveloper.tiktok.data.models.users.User;
 import io.github.jwdeveloper.tiktok.live.LiveClient;
 import org.bukkit.Bukkit;
@@ -19,15 +21,17 @@ public class TikTokConnection {
     private final Player player;
     private final String username;
     private final AlertService alertService;
+    private final MessageHandler messageHandler;
     private final boolean isFolia;
     private LiveClient liveClient;
 
-    public TikTokConnection(NamLivechat plugin, Player player, String username, AlertService alertService, boolean isFolia) {
+    public TikTokConnection(NamLivechat plugin, Player player, String username) {
         this.plugin = plugin;
         this.player = player;
-        this.username = username.replace("@", "");
-        this.alertService = alertService;
-        this.isFolia = isFolia;
+        this.username = username;
+        this.alertService = plugin.getAlertService();
+        this.messageHandler = plugin.getMessageHandler();
+        this.isFolia = plugin.isFolia();
     }
 
     public void start() {
@@ -40,44 +44,78 @@ public class TikTokConnection {
                             String coloredAuthor = authorColor + authorName;
 
                             String message = event.getText();
-                            String format = plugin.getTiktokConfig().getString("message-format", "&b[TikTok] &f%user%&7: &f%message%");
+                            String format = plugin.getTiktokConfig().getString("message-format");
                             String rawMessage = format.replace("%user%", coloredAuthor).replace("%message%", message);
 
-                            // --- ส่วนที่แก้ไข: แปลงสีทั้งหมดในครั้งเดียวตอนท้าย ---
                             String finalMessage = ChatColor.translateAlternateColorCodes('&', rawMessage);
                             runOnPlayerThread(() -> player.sendMessage(finalMessage));
                         })
-                        .onGift((client, event) -> handleAlert("gift", event.getUser(), event.getGift().getName(), String.valueOf(event.getCombo()), String.valueOf(event.getGift().getDiamondCost())))
-                        .onFollow((client, event) -> handleAlert("follow", event.getUser(), null, null, null))
+                        // --- ส่วนที่แก้ไข: ย้าย Logic การจัดการ Alert มาไว้ที่นี่โดยตรง ---
+                        .onGift((client, event) -> {
+                            FileConfiguration config = plugin.getTiktokConfig();
+                            String path = "events.gift";
+                            if (!config.getBoolean(path + ".enabled", true)) return;
+
+                            User user = event.getUser();
+                            Gift gift = event.getGift();
+
+                            String message = config.getString(path + ".message", "")
+                                    .replace("%user%", user.getProfileName())
+                                    .replace("%gift_name%", gift.getName())
+                                    .replace("%amount%", String.valueOf(event.getCombo()))
+                                    .replace("%total_value%", String.valueOf(gift.getDiamondCost()));
+
+                            broadcastAlert(message, path);
+
+                            if (config.getBoolean(path + ".boss-bar.enabled", false)) {
+                                String bossBarMessage = config.getString(path + ".boss-bar.message", "")
+                                        .replace("%user%", user.getProfileName())
+                                        .replace("%gift_name%", gift.getName())
+                                        .replace("%amount%", String.valueOf(event.getCombo()))
+                                        .replace("%total_value%", String.valueOf(gift.getDiamondCost()));
+
+                                showBossBar(bossBarMessage, path);
+                            }
+                        })
+                        .onFollow((client, event) -> {
+                            FileConfiguration config = plugin.getTiktokConfig();
+                            String path = "events.follow";
+                            if (!config.getBoolean(path + ".enabled", true)) return;
+
+                            User user = event.getUser();
+                            String message = config.getString(path + ".message", "").replace("%user%", user.getProfileName());
+                            broadcastAlert(message, path);
+
+                            if (config.getBoolean(path + ".boss-bar.enabled", false)) {
+                                String bossBarMessage = config.getString(path + ".boss-bar.message", "").replace("%user%", user.getProfileName());
+                                showBossBar(bossBarMessage, path);
+                            }
+                        })
+                        // ------------------------------------------
                         .onConnected((client, event) -> {
                             String liveTitle = client.getRoomInfo().getTitle();
                             String channelName = client.getRoomInfo().getHost().getProfileName();
-                            // --- ส่วนที่แก้ไข: เปลี่ยนรูปแบบข้อความ ---
-                            String connectingMessage = String.format("&aSucessfully connected to &f%s &a@%s tiktok live chat.", liveTitle, channelName);
-
                             runOnPlayerThread(() -> {
-                                player.sendMessage(ChatColor.translateAlternateColorCodes('&', connectingMessage));
+                                messageHandler.sendFormattedMessage(player, "connect_success_tiktok",
+                                        "%title%", liveTitle,
+                                        "%user%", channelName
+                                );
                                 player.playSound(player.getLocation(), "entity.experience_orb.pickup", 1.0f, 1.0f);
                             });
                         })
                         .onLiveEnded((client, event) -> {
-                            runOnPlayerThread(() -> player.sendMessage(ChatColor.YELLOW + "The stream for @" + username + " has ended."));
+                            runOnPlayerThread(() -> messageHandler.sendFormattedMessage(player, "disconnect_stream_ended_tiktok", "%user%", username));
                             stop();
                         })
                         .onError((client, event) -> {
                             String exceptionMsg = event.getException().getMessage().toLowerCase();
-                            String userMessage;
                             if (exceptionMsg.contains("user not found")) {
-                                userMessage = "Could not find a TikTok user named '" + username + "'.";
+                                runOnPlayerThread(() -> messageHandler.sendFormattedMessage(player, "tiktok_user_not_found", "%user%", username));
                             } else if (exceptionMsg.contains("user is offline") || exceptionMsg.contains("stream is offline")) {
-                                userMessage = "The user @" + username + " is not currently live.";
+                                runOnPlayerThread(() -> messageHandler.sendFormattedMessage(player, "tiktok_user_offline", "%user%", username));
                             } else {
-                                userMessage = "Could not connect to TikTok. Please try again later.";
+                                runOnPlayerThread(() -> messageHandler.sendMessage(player, "tiktok_connect_fail"));
                             }
-                            runOnPlayerThread(() -> {
-                                player.sendMessage(ChatColor.RED + userMessage);
-                                player.playSound(player.getLocation(), "entity.villager.no", 1.0f, 1.0f);
-                            });
                             plugin.getTiktokService().removeConnection(player.getUniqueId());
                         })
                         .build();
@@ -85,7 +123,7 @@ public class TikTokConnection {
                 liveClient.connect();
 
             } catch (Exception e) {
-                plugin.getLogger().severe("An unexpected error occurred in TikTokConnection for " + player.getName() + ": " + e.getMessage());
+                plugin.logDebug("An unexpected error occurred in TikTokConnection for " + player.getName() + ": " + e.getMessage());
                 plugin.getTiktokService().removeConnection(player.getUniqueId());
             }
         });
@@ -99,37 +137,27 @@ public class TikTokConnection {
         plugin.getTiktokService().removeConnection(player.getUniqueId());
     }
 
-    private void handleAlert(String type, User user, String giftName, String amount, String totalValue) {
+    private void broadcastAlert(String message, String configPath) {
         FileConfiguration config = plugin.getTiktokConfig();
-        String path = "events." + type;
-        if (!config.getBoolean(path + ".enabled", true)) return;
-
-        String userDisplayName = user.getProfileName();
-
-        String message = config.getString(path + ".message", "");
-        message = replacePlaceholders(message, userDisplayName, giftName, amount, totalValue);
-        final String finalMessage = message;
-
         runOnPlayerThread(() -> {
-            player.sendMessage(ChatColor.translateAlternateColorCodes('&', finalMessage));
-            String soundName = config.getString(path + ".sound.name", "");
+            player.sendMessage(ChatColor.translateAlternateColorCodes('&', message));
+            String soundName = config.getString(configPath + ".sound.name", "");
             if (!soundName.isEmpty()) {
-                float volume = (float) config.getDouble(path + ".sound.volume", 1.0);
-                float pitch = (float) config.getDouble(path + ".sound.pitch", 1.5);
+                float volume = (float) config.getDouble(configPath + ".sound.volume", 1.0);
+                float pitch = (float) config.getDouble(configPath + ".sound.pitch", 1.5);
                 player.playSound(player.getLocation(), soundName.toLowerCase(Locale.ROOT), volume, pitch);
             }
         });
+    }
 
-        if (config.getBoolean(path + ".boss-bar.enabled", false)) {
-            String bossBarMessage = config.getString(path + ".boss-bar.message", "");
-            bossBarMessage = replacePlaceholders(bossBarMessage, userDisplayName, giftName, amount, totalValue);
-            try {
-                BarColor color = BarColor.valueOf(config.getString(path + ".boss-bar.color", "WHITE").toUpperCase());
-                int duration = config.getInt(path + ".boss-bar.duration", 10);
-                alertService.showBossBarAlert(player, ChatColor.translateAlternateColorCodes('&', bossBarMessage), color, duration);
-            } catch (IllegalArgumentException e) {
-                plugin.getLogger().warning("Invalid Boss Bar color in tiktok-config.yml for " + type);
-            }
+    private void showBossBar(String message, String configPath) {
+        FileConfiguration config = plugin.getTiktokConfig();
+        try {
+            BarColor color = BarColor.valueOf(config.getString(configPath + ".boss-bar.color", "WHITE").toUpperCase());
+            int duration = config.getInt(configPath + ".boss-bar.duration", 10);
+            alertService.showBossBarAlert(player, ChatColor.translateAlternateColorCodes('&', message), color, duration);
+        } catch (IllegalArgumentException e) {
+            plugin.getLogger().warning("Invalid Boss Bar color in tiktok-config.yml");
         }
     }
 
@@ -138,14 +166,6 @@ public class TikTokConnection {
         if (user.isModerator()) return config.getString("role-colors.moderator", "&9");
         if (user.isSubscriber()) return config.getString("role-colors.subscriber", "&a");
         return config.getString("role-colors.default", "&7");
-    }
-
-    private String replacePlaceholders(String template, String user, String giftName, String amount, String totalValue) {
-        return template
-                .replace("%user%", user)
-                .replace("%gift_name%", giftName != null ? giftName : "")
-                .replace("%amount%", amount != null ? amount : "")
-                .replace("%total_value%", totalValue != null ? totalValue : "");
     }
 
     private void runOnPlayerThread(Runnable runnable) {

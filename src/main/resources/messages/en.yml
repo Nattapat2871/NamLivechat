@@ -1,0 +1,72 @@
+# English Messages for NamLivechat
+
+# General command feedback
+prefix: "&a[NamLivechat] &r"
+error_prefix: "&c[NamLivechat] &r"
+player_only: "This command can only be run by a player."
+no_permission: "&cYou do not have permission to use this command."
+unknown_subcommand: "&cUnknown subcommand. Use '/livechat <start|stop>'."
+unknown_platform: "&cUnknown platform. Use: youtube, twitch, tiktok."
+
+# Help Message (/livechat)
+help_header: "&a--- NamLivechat v%version% ---"
+help_description: "&fBrings YouTube, Twitch & TikTok live chats into Minecraft!"
+help_usage: "&aUsage: /livechat <start|stop> <platform> [url/id/user]"
+
+# Start Command
+start_usage: "&cUsage: /livechat start <url> OR /livechat start <platform> <url/id/user>"
+start_placeholder_error: "&cPlease provide a real URL, ID, or Username, not the example text."
+connecting: "&eConnecting to %platform%..."
+connecting_channel: "&eConnecting to %platform% channel &d%channel%&e..."
+connecting_user: "&eConnecting to %platform% user &b@%user%&e..."
+already_connected: "&cYou are already connected to a %platform% chat."
+
+# Stop Command
+stop_success: "&aDisconnected from %platform% live chat."
+stop_all_success: "&aDisconnected from all live chats."
+not_connected: "&cYou are not connected to any live chat."
+not_connected_platform: "&cYou are not connected to a %platform% live chat."
+
+# Connection Status
+connect_success_youtube: "&aSuccessfully connected to: &cYoutube Live &f%title% &a(Channel: &f%channel%&a)"
+connect_success_twitch: "&aSuccessfully connected to: &5Twitch live &f%title% &a(Channel: &f%channel%&a)"
+connect_success_tiktok: "&aSuccessfully connected to: &bTi&fkT&cok &f%title% &a(@%user%'s TikTok live chat)"
+
+disconnect_stream_ended_youtube: "&aDisconnected from &cYouTube &f%channel%&a's live chat."
+disconnect_stream_ended_twitch: "&aDisconnected from &5Twitch &f%channel%&a's live chat."
+disconnect_stream_ended_tiktok: "&eThe stream form &bTi&fkT&cok @%user% has ended."
+
+# Platform-specific Errors
+youtube_disabled: "&cYouTube feature is disabled in the config."
+youtube_no_api_key: "&cYouTube feature is disabled. Please check the API key."
+youtube_invalid_key: "&cYouTube API Key is invalid. Please contact an admin."
+youtube_quota_exceeded: "&cYouTube API Quota has been exceeded for today."
+youtube_not_live: "&cCould not find an active live stream for this Video ID/URL."
+
+twitch_disabled: "&cTwitch integration is disabled in the config."
+twitch_no_token: "&cTwitch OAuth Token is not configured in twitch-config.yml."
+twitch_invalid_token: "&cTwitch connection failed! The OAuth Token is invalid or expired."
+twitch_not_live: "&cChannel '%channel%' is not currently live."
+twitch_connect_fail: "&cCould not connect to Twitch. The channel might be offline or the API is temporarily down."
+
+tiktok_disabled: "&cTikTok feature is disabled in the config."
+tiktok_connect_fail: "&cCould not connect to TikTok. User might not be live or the username is incorrect."
+tiktok_user_not_found: "&cCould not find a TikTok user named '%user%'."
+tiktok_user_offline: "&cThe user @%user% is not currently live."
+
+# Update Checker
+update_available:
+  - "&a--------------------------------------------------"
+  - "&aA new version of NamLivechat is available: &6%version%"
+  - "&eRun '/namlivechat update' to download it."
+  - "&a--------------------------------------------------"
+update_downloading: "&eDownloading update %version%..."
+update_success: "&aUpdate downloaded successfully!"
+update_restart: "&ePlease restart the server to apply the update."
+update_latest: "&aYou are already running the latest version."
+update_disabled: "&cThe update command is disabled in the config."
+update_fail: "&cFailed to download the update. Please check the console."
+
+# Admin Command
+admin_usage: "&eUsage: /namlivechat <reload|update>"
+admin_reload: "&aNamLivechat configuration reloaded."

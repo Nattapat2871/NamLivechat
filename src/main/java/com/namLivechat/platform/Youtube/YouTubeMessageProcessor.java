@@ -1,10 +1,9 @@
 package com.namLivechat.platform.Youtube;
 
-import com.google.api.services.youtube.model.LiveChatMessage;
-import com.google.api.services.youtube.model.LiveChatMessageAuthorDetails;
-import com.google.api.services.youtube.model.LiveChatSuperChatDetails;
+import com.google.api.services.youtube.model.*;
 import com.namLivechat.NamLivechat;
 import com.namLivechat.service.AlertService;
+import com.namLivechat.service.MessageHandler;
 import org.bukkit.ChatColor;
 import org.bukkit.boss.BarColor;
 import org.bukkit.configuration.ConfigurationSection;
@@ -17,11 +16,13 @@ public class YouTubeMessageProcessor {
 
     private final NamLivechat plugin;
     private final AlertService alertService;
+    private final MessageHandler messageHandler;
     private final Player player;
 
-    public YouTubeMessageProcessor(NamLivechat plugin, AlertService alertService, Player player) {
+    public YouTubeMessageProcessor(NamLivechat plugin, Player player) {
         this.plugin = plugin;
-        this.alertService = alertService;
+        this.alertService = plugin.getAlertService();
+        this.messageHandler = plugin.getMessageHandler();
         this.player = player;
     }
 
@@ -34,15 +35,13 @@ public class YouTubeMessageProcessor {
         switch (type) {
             case "textMessageEvent":
                 String authorColor = getAuthorColor(author, config);
-                String coloredAuthor = ChatColor.translateAlternateColorCodes('&', authorColor + authorName);
-                String format = config.getString("message-format", "&c[YouTube] &f%player%&7: &e%message%");
+                String coloredAuthor = authorColor + authorName;
 
                 String originalMessage = item.getSnippet().getDisplayMessage();
                 String cleanMessage = originalMessage.replaceAll(":[a-zA-Z0-9_\\-]+:", "");
 
-                String rawMessage = format
-                        .replace("%player%", coloredAuthor)
-                        .replace("%message%", cleanMessage);
+                String format = config.getString("message-format");
+                String rawMessage = format.replace("%player%", coloredAuthor).replace("%message%", cleanMessage);
 
                 player.sendMessage(ChatColor.translateAlternateColorCodes('&', rawMessage));
                 break;
@@ -50,24 +49,51 @@ public class YouTubeMessageProcessor {
             case "superChatEvent":
                 if (config.getBoolean("youtube-alerts.show-super-chat", true)) {
                     LiveChatSuperChatDetails details = item.getSnippet().getSuperChatDetails();
-                    handleAlert("super-chat", authorName, details.getAmountDisplayString(), details.getUserComment());
+                    handleAlert("super-chat", authorName, details.getAmountDisplayString(), details.getUserComment(), null, null);
                 }
                 break;
 
             case "newSponsorEvent":
                 if (config.getBoolean("youtube-alerts.show-new-members", true)) {
-                    handleAlert("new-member", authorName, null, null);
+                    handleAlert("new-member", authorName, null, null, null, null);
+                }
+                break;
+
+            case "superStickerEvent":
+                if (config.getBoolean("youtube-alerts.show-super-chat", true)) {
+                    LiveChatSuperStickerDetails details = item.getSnippet().getSuperStickerDetails();
+                    handleAlert("super-sticker", authorName, details.getAmountDisplayString(), null, null, null);
+                }
+                break;
+
+            case "membershipGiftingEvent":
+                if (config.getBoolean("youtube-alerts.show-new-members", true)) {
+                    handleAlert("gifted-membership", authorName, null, null, null, null);
+                }
+                break;
+
+            case "memberMilestoneChatEvent":
+                if (config.getBoolean("member-milestone.enabled", true)) {
+                    LiveChatMemberMilestoneChatDetails details = item.getSnippet().getMemberMilestoneChatDetails();
+                    String milestoneText = details.getMemberMonth() + " months";
+                    handleAlert("member-milestone",
+                            authorName,
+                            null,
+                            details.getUserComment(),
+                            null,
+                            milestoneText
+                    );
                 }
                 break;
         }
     }
 
-    private void handleAlert(String type, String authorName, String amount, String message) {
+    private void handleAlert(String type, String authorName, String amount, String message, String gifterName, String milestone) {
         FileConfiguration config = plugin.getYoutubeConfig();
         String path = type;
 
         String chatMessage = config.getString(path + ".message", "");
-        chatMessage = replacePlaceholders(chatMessage, authorName, amount, message);
+        chatMessage = replacePlaceholders(chatMessage, authorName, amount, message, gifterName, milestone);
         player.sendMessage(ChatColor.translateAlternateColorCodes('&', chatMessage));
 
         ConfigurationSection soundSection = config.getConfigurationSection(path + ".sound");
@@ -82,8 +108,7 @@ public class YouTubeMessageProcessor {
 
         if (config.getBoolean(path + ".boss-bar.enabled", false)) {
             String bossBarMessage = config.getString(path + ".boss-bar.message", "");
-            bossBarMessage = replacePlaceholders(bossBarMessage, authorName, amount, message);
-
+            bossBarMessage = replacePlaceholders(bossBarMessage, authorName, amount, message, gifterName, milestone);
             try {
                 BarColor color = BarColor.valueOf(config.getString(path + ".boss-bar.color", "WHITE").toUpperCase());
                 int duration = config.getInt(path + ".boss-bar.duration", 10);
@@ -94,11 +119,13 @@ public class YouTubeMessageProcessor {
         }
     }
 
-    private String replacePlaceholders(String template, String authorName, String amount, String message) {
+    private String replacePlaceholders(String template, String authorName, String amount, String message, String gifterName, String milestone) {
         return template
                 .replace("%player%", authorName)
                 .replace("%amount%", amount != null ? amount : "")
-                .replace("%message%", message != null ? message : "");
+                .replace("%message%", message != null ? message : "")
+                .replace("%gifter%", gifterName != null ? gifterName : authorName)
+                .replace("%milestone%", milestone != null ? milestone : "");
     }
 
     private String getAuthorColor(LiveChatMessageAuthorDetails author, FileConfiguration config) {

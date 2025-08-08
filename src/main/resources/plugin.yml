@@ -4,7 +4,7 @@ main: com.namLivechat.NamLivechat
 api-version: '1.21'
 folia-supported: true
 author: Nattapat2871
-description: Displays YouTube live chat in Minecraft.
+description: Displays YouTube, Twitch, and TikTok live chats in Minecraft.
 commands:
   livechat:
     description: Connects to a YouTube live stream.

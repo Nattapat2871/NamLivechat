@@ -2,35 +2,38 @@
 #        NamLivechat YouTube Configuration           #
 # ================================================== #
 
-# ใส่ YouTube Data API v3 Key ของคุณที่นี่
-# ไปที่ https://console.cloud.google.com/ เพื่อสร้างคีย์
+# Set to true to enable the YouTube integration.
+enabled: true
+
+# Enter your YouTube Data API v3 Key here
+# Go to https://console.cloud.google.com/ to create a key
 youtube-api-key: "YOUR_API_KEY_HERE"
 
-# รูปแบบข้อความแชทธรรมดาที่จะแสดงในเกม
-# %player% = ชื่อผู้ใช้ YouTube (พร้อมสีตามยศ)
-# %message% = ข้อความ
+# Format for regular chat messages displayed in-game
+# %player% = YouTube username (with color based on role)
+# %message% = The message
 message-format: "&c[YouTube] &f%player%&7 : &e%message%"
 
-# ตั้งค่าสีสำหรับยศต่างๆ ในแชท YouTube
+# Configure colors for different roles in YouTube chat
 role-colors:
-  owner: "&6"      # สีทองสำหรับเจ้าของช่อง
-  moderator: "&9"  # สีฟ้าสำหรับผู้ดูแล
-  member: "&a"     # สีเขียวสำหรับสมาชิก (Sponsor)
-  default: "&7"    # สีขาวสำหรับผู้ชมทั่วไป
+  owner: "&6"      # Gold for the channel owner
+  moderator: "&9"  # Blue for moderators
+  member: "&a"     # Green for members (Sponsors)
+  default: "&7"    # White for general viewers
 
 # ================================================== #
 #               YouTube Event Alerts                 #
 # ================================================== #
 youtube-alerts:
-  # ตั้งค่าเป็น true เพื่อเปิดการแจ้งเตือน Super Chat
+  # Set to true to enable Super Chat notifications
   show-super-chat: true
-  # ตั้งค่าเป็น true เพื่อเปิดการแจ้งเตือนเมื่อมีคนสมัครสมาชิกใหม่
+  # Set to true to enable new member notifications
   show-new-members: true
 
 # --- Super Chat ---
 super-chat:
   # %player%, %amount%, %message%
-  message: "&6[Super Chat] &e%player% &fhas donated &a%amount%&f : &d%message%"
+  message: "&c[YouTube] &e%player% &fhas Super Chat donated &a%amount%&f : &d%message%"
   sound:
     name: "entity.firework_rocket.large_blast"
     volume: 1.0
@@ -58,3 +61,52 @@ new-member:
     message: "&c[YouTube] &d&lWelcome to our new member, &f&l%player%&d&l!"
     color: "PINK"
     duration: 10
+
+# --- Super Sticker ---
+super-sticker:
+  # %player% = Username
+  # %amount% = Amount
+  message: "&c[YouTube] &e%player% &fhas Super Sticker sent worth &a%amount%&f!"
+  sound:
+    name: "entity.villager.celebrate"
+    volume: 1.0
+    pitch: 1.2
+  boss-bar:
+    enabled: true
+    # %player%, %amount%
+    message: "&c[YouTube] &a&l%player% &f&lsent a Super Sticker!"
+    color: "GREEN"
+    duration: 10
+
+# --- Gifted Membership ---
+gifted-membership:
+  # %gifter% = Gifter's name
+  # %amount% = Number of gifts (usually 1)
+  message: "&c[YouTube] &f%gifter% &ehas gifted a membership!"
+  sound:
+    name: "entity.player.levelup"
+    volume: 1.0
+    pitch: 1.8
+  boss-bar:
+    enabled: true
+    # %gifter%
+    message: "&c[YouTube] &d&l%gifter% &f&lhas gifted a membership!"
+    color: "PURPLE"
+    duration: 12
+
+member-milestone:
+  enabled: true
+  # %player% = Username
+  # %milestone% = Message from YouTube (e.g., "1 Year", "2 Months")
+  # %message% = The message the viewer sent along with it
+  message: "&a[Milestone!] &e%player% &fhas been a member for &d%milestone%&f! Message: &d%message%"
+  sound:
+    name: "entity.ender_dragon.growl"
+    volume: 1.0
+    pitch: 1.5
+  boss-bar:
+    enabled: true
+    # %player%, %milestone%
+    message: "&a&lMember Milestone! &f&l%player% (%milestone%)"
+    color: "GREEN"
+    duration: 15

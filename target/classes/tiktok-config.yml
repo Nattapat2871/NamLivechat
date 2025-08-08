@@ -8,12 +8,12 @@ enabled: true
 message-format: "&8[&bTi&fkT&cok&8] &9%user% &7 : &a%message%"
 
 # --- NEW: Role Colors ---
-# ตั้งค่าสียศสำหรับผู้ใช้ TikTok
+# Configure role colors for TikTok users
 role-colors:
-  moderator: "&9"      # สีฟ้าสำหรับผู้ดูแล
-  subscriber: "&a"   # สีเขียวสำหรับผู้ติดตาม (Subscribe)
-  gifter: "&6"       # สีทองสำหรับคนที่เคยส่ง Gift
-  default: "&7"      # สีเทาสำหรับผู้ชมทั่วไป
+  moderator: "&9"      # Blue for moderators
+  subscriber: "&a"   # Green for subscribers
+  gifter: "&6"       # Gold for gifters
+  default: "&7"      # Gray for general viewers
 
 # ================================================== #
 #                 TikTok Event Alerts                #
@@ -21,11 +21,11 @@ role-colors:
 events:
   enabled: true
 
-  # --- การส่งของขวัญ (Gifts) ---
+  # --- Gifts ---
   gift:
     enabled: true
     # %user%, %gift_name%, %amount%, %total_value%
-    message: "&e[TikTok Gift] &f%user% &ahas sent %amount%x &d%gift_name% &a(Value: %total_value% Diamonds)!"
+    message: "&8[&bTi&fkT&cok &eGift&7] &f%user% &ahas sent %amount%x &d%gift_name% &a(Value: %total_value% Diamonds)!"
     sound:
       name: "entity.villager.celebrate"
       volume: 1.0
@@ -36,17 +36,17 @@ events:
       color: "YELLOW"
       duration: 10
 
-  # --- การกดติดตาม (Follow) ---
+  # --- Follow ---
   follow:
     enabled: true
     # %user%
-    message: "&b[TikTok] &f%user% &ehas followed the stream!"
+    message: "&8[&bTi&fkT&cok&8] &f%user% &ehas followed the stream!"
     sound:
       name: "entity.player.levelup"
       volume: 1.0
       pitch: 1.5
     boss-bar:
       enabled: true
-      message: "&b&lNew Follower: &f&l%user%"
+      message: "&8[&bTi&fkT&cok&8] &b&lNew Follower: &f&l%user%"
       color: "BLUE"
       duration: 8

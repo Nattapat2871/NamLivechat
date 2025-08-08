@@ -15,9 +15,9 @@ public class TwitchStreamMonitor {
     private final TwitchClient client;
     private final String oauthToken;
     private final String channelName;
-    private final Consumer<Void> onStreamEnd; // Callback ที่จะถูกเรียกเมื่อไลฟ์จบ
-    private Object task;
+    private final Consumer<Void> onStreamEnd;
     private final boolean isFolia;
+    private Object task;
 
     public TwitchStreamMonitor(NamLivechat plugin, TwitchClient client, String oauthToken, String channelName, Consumer<Void> onStreamEnd, boolean isFolia) {
         this.plugin = plugin;
@@ -29,42 +29,44 @@ public class TwitchStreamMonitor {
     }
 
     public void start() {
-        Runnable taskLogic = () -> {
+        Runnable checkTask = () -> {
+            if (plugin.isDisabling()) {
+                stop();
+                return;
+            }
+            // --- ส่วนที่แก้ไข: เปลี่ยนมาเรียกใช้ isStreamLive() ที่นี่แทน ---
             if (!isStreamLive()) {
-                plugin.getLogger().info("Stream for channel " + channelName + " has ended. Stopping connection.");
-                onStreamEnd.accept(null); // เรียก callback เพื่อแจ้งว่าไลฟ์จบแล้ว
-                stop(); // หยุดการทำงานของตัวเอง
+                onStreamEnd.accept(null);
+                stop();
             }
         };
 
         if (isFolia) {
-            this.task = Bukkit.getAsyncScheduler().runAtFixedRate(plugin, t -> taskLogic.run(), 2, 2, java.util.concurrent.TimeUnit.MINUTES);
+            this.task = Bukkit.getAsyncScheduler().runAtFixedRate(plugin, (t) -> checkTask.run(), 60, 60, java.util.concurrent.TimeUnit.SECONDS);
         } else {
-            this.task = Bukkit.getScheduler().runTaskTimerAsynchronously(plugin, taskLogic, 20L * 120, 20L * 120);
+            this.task = Bukkit.getScheduler().runTaskTimerAsynchronously(plugin, checkTask, 1200L, 1200L); // 60 seconds
         }
     }
 
-    public void stop() {
-        if (task == null) return;
-        try {
-            if (task instanceof io.papermc.paper.threadedregions.scheduler.ScheduledTask) {
-                ((io.papermc.paper.threadedregions.scheduler.ScheduledTask) task).cancel();
-            } else if (task instanceof BukkitTask) {
-                ((BukkitTask) task).cancel();
-            }
-        } catch (Exception e) {
-            plugin.getLogger().warning("Failed to cancel a Twitch monitor task.");
-        }
-        task = null;
-    }
-
+    // --- เพิ่มเมธอด isStreamLive() กลับเข้ามาสำหรับ Monitor ---
     private boolean isStreamLive() {
         try {
             StreamList resultList = client.getHelix().getStreams(oauthToken, null, null, 1, null, null, null, Collections.singletonList(channelName)).execute();
             return !resultList.getStreams().isEmpty();
         } catch (Exception e) {
-            plugin.getLogger().warning("Could not check stream status for " + channelName + ": " + e.getMessage());
-            return false; // ถ้าเช็คไม่ได้ ให้ถือว่าออฟไลน์
+            plugin.logDebug("Twitch stream monitor check failed: " + e.getMessage());
+            return false; // ถ้าเช็คไม่สำเร็จ ให้ถือว่าสตรีมจบแล้ว
+        }
+    }
+
+    public void stop() {
+        if (task != null) {
+            if (task instanceof io.papermc.paper.threadedregions.scheduler.ScheduledTask) {
+                ((io.papermc.paper.threadedregions.scheduler.ScheduledTask) task).cancel();
+            } else if (task instanceof BukkitTask) {
+                ((BukkitTask) task).cancel();
+            }
+            task = null;
         }
     }
 }

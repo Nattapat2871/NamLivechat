@@ -2,19 +2,19 @@
 #         NamLivechat Twitch Configuration           #
 # ================================================== #
 
-# เปิด/ปิด การใช้งานส่วนของ Twitch
+# Enable/disable the Twitch integration
 enabled: true
 
-# Access Token ที่ได้จาก https://twitchtokengenerator.com/
-oauth-token: "ACCESS-TOKEN-HERE"
+# Access Token from https://twitchtokengenerator.com/
+oauth-token: "YOUR_OAUTH_TOKEN_HERE"
 
 # --- Formatting ---
-# %user% = ชื่อผู้ใช้ Twitch (ใส่สีแล้วจาก role-colors)
-# %message% = ข้อความ
+# %user% = Twitch username (with color from role-colors)
+# %message% = The message
 format: "&5[Twitch] %user%&7 : &f%message%"
 
 # --- Role Colors ---
-# ตั้งค่าสียศสำหรับผู้ใช้ Twitch
+# Configure role colors for Twitch users
 role-colors:
   broadcaster: "&6"
   moderator: "&9"
@@ -26,10 +26,26 @@ role-colors:
 #                Twitch Event Alerts                 #
 # ================================================== #
 events:
-  # เปิด/ปิด การแสดงผลการแจ้งเตือนทั้งหมดในส่วนนี้
+  # Enable/disable all event alerts in this section
   enabled: true
 
-  # --- การสมัครสมาชิกใหม่ (New Subscription) ---
+  # --- New Follower ---
+  new-follower:
+    enabled: true
+    # %user% = Username of the new follower
+    message: "&5[Twitch] &f%user% &ehas just followed!"
+    sound:
+      name: "entity.experience_orb.pickup"
+      volume: 1.0
+      pitch: 1.8
+    boss-bar:
+      enabled: true
+      # %user%
+      message: "&5[Twitch] &d&lNew Follower: &f&l%user%"
+      color: "PURPLE"
+      duration: 8
+
+  # --- New Subscription ---
   new-subscription:
     enabled: true
     # %user%, %tier%
@@ -43,12 +59,12 @@ events:
       enabled: true
       # %user%, %tier%
       message: "&5[Twitch] &d&l%user% &f&lhas just subscribed! (Tier %tier%)"
-      # สีของ Boss Bar: BLUE, GREEN, PINK, PURPLE, RED, WHITE, YELLOW
+      # Boss Bar colors: BLUE, GREEN, PINK, PURPLE, RED, WHITE, YELLOW
       color: "PINK"
-      # ระยะเวลาที่แสดง (วินาที)
+      # Display duration (seconds)
       duration: 10
 
-  # --- การต่ออายุสมาชิก (Re-subscription) ---
+  # --- Re-subscription ---
   resubscription:
     enabled: true
     # %user%, %months%, %streak%, %tier%
@@ -65,7 +81,7 @@ events:
       color: "GREEN"
       duration: 12
 
-  # --- การส่งของขวัญ (Gift Subscription) ---
+  # --- Gift Subscription ---
   gift-subscription:
     enabled: true
     # %gifter%, %recipient%, %tier%
@@ -82,7 +98,7 @@ events:
       color: "YELLOW"
       duration: 10
 
-  # --- การแจกของขวัญให้ชุมชน (Community Gift / Sub Bomb) ---
+  # --- Community Gift / Sub Bomb ---
   community-subscription:
     enabled: true
     # %gifter%, %count%, %tier%

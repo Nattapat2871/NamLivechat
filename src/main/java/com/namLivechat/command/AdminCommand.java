@@ -1,7 +1,7 @@
 package com.namLivechat.command;
 
 import com.namLivechat.NamLivechat;
-import org.bukkit.ChatColor;
+import com.namLivechat.service.MessageHandler;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -9,25 +9,40 @@ import org.bukkit.command.CommandSender;
 public class AdminCommand implements CommandExecutor {
 
     private final NamLivechat plugin;
+    private final MessageHandler messageHandler;
 
     public AdminCommand(NamLivechat plugin) {
         this.plugin = plugin;
+        this.messageHandler = plugin.getMessageHandler();
     }
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (!sender.hasPermission("namlivechat.admin")) {
-            sender.sendMessage(ChatColor.RED + "You do not have permission to use this command.");
+            messageHandler.sendMessage(sender, "no_permission");
             return true;
         }
 
-        if (args.length > 0 && args[0].equalsIgnoreCase("reload")) {
-            plugin.reloadPlugin();
-            sender.sendMessage(ChatColor.GREEN + "NamLivechat configuration reloaded.");
+        if (args.length == 0) {
+            messageHandler.sendMessage(sender, "admin_usage");
             return true;
         }
 
-        sender.sendMessage(ChatColor.GOLD + "Usage: /namlivechat reload");
+        String subCommand = args[0].toLowerCase();
+        switch (subCommand) {
+            case "reload":
+                plugin.reloadPlugin();
+                messageHandler.sendMessage(sender, "admin_reload");
+                break;
+
+            case "update":
+                plugin.getUpdateChecker().downloadUpdate(sender);
+                break;
+
+            default:
+                messageHandler.sendMessage(sender, "admin_usage");
+                break;
+        }
         return true;
     }
 }

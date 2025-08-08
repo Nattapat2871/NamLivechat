@@ -1,3 +1,23 @@
 # =========================================== #
-#         NamLivechat Configuration           #
+#         NamLivechat Configuration
+#              General Settings
 # =========================================== #
+
+# Select the language for the plugin's messages
+# Available: en, th
+language: "en"
+
+# Set to true to enable detailed logging in the console
+# Recommended for troubleshooting purposes only
+debug-mode: false
+
+# ========================================= #
+#            Update Settings                #
+# ========================================= #
+# Set to true to notify admins in-game when a new version is available.
+update-alert: true
+
+# Set to true to enable the /namlivechat update command.
+# This will download the latest version to the /plugins/NamLivechat/update/ folder.
+# A server restart is required to apply the update.
+auto-update: true
